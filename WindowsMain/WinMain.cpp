@@ -233,6 +233,158 @@
 	#. DWORD의 뒤에 있는 메모리 공간을 LOWORD가 가지고 있다.
 */
 
+//#include <Windows.h>
+//#include <sstream>
+//
+//const wchar_t gClassName[]{ L"MyWindowClass" };
+//
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+//
+//int WINAPI WinMain(
+//	_In_ HINSTANCE hInstance,
+//	_In_opt_ HINSTANCE hPrevInstance,
+//	_In_ LPSTR lpCmdLine,
+//	_In_ int nShowCmd)
+//{
+//// #1. < 윈도우 클래스 생성 > : 윈도우 클래스라는 틀을 만들어 놓는다.
+////		=> 윈도우의 모양, 기능들을 묶어놓은 개념 집합
+//	WNDCLASSEX wc;
+//	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//
+//	wc.style = CS_HREDRAW | CS_VREDRAW;
+//	wc.lpszClassName = gClassName;
+//	wc.hInstance = hInstance;
+//	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//	wc.lpfnWndProc = WindowProc;
+//	wc.cbSize = sizeof(WNDCLASSEX);
+//
+//// #1-1. < 윈도우 클래스 등록 >
+////		=> 등록된 윈도우 클래스를 통해 윈도우를 찍어낼 수 있다.
+//	if (!RegisterClassEx(&wc))
+//	{
+//		MessageBox(nullptr, L"Failed to register Class!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//// #2. 윈도우 생성
+//	HWND hWnd;
+//	hWnd = CreateWindowEx(
+//		NULL,
+//		gClassName,
+//		L"Hello Window",
+//		WS_OVERLAPPEDWINDOW,
+//		0, 0, 640, 480,
+//		nullptr, nullptr,
+//		hInstance,
+//		nullptr);
+//
+//// #2-1. 윈도우 생성 확인
+////		=> CreateWindowEx함수를 통해 윈도우 포인터를 받지 못하였을 경우
+//	if (hWnd == nullptr)
+//	{
+//		MessageBox(nullptr, L"Failed to Create Window!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//// #2-2. 윈도우가 정상적으로 만들어 졌을 경우
+////		=> 화면에 윈도우를 보여주고 윈도우를 갱신( 다시 그리기 )해준다.
+//	ShowWindow(hWnd, nShowCmd);
+//	UpdateWindow(hWnd);
+//
+//// #3. 메시지 루프
+////		=> 운영체제에 메세지가 있는지 물어보고 있으면 가져온다.
+////		=> 메세지가 없을 때까지 이 과정을 반복한다.
+//	MSG msg;
+//	while (GetMessage(&msg, nullptr, 0, 0))
+//	{
+//// #. 윈도우에서 실행되는 모든 App에는 '메세지 큐'라는 것이 있다.
+//// #. 운영체제는 계속해서 수십개의 메세지를 전달할 것이다. 그럼 이 메세지를 쌓아 놓고 하나씩 처리할 필요가 있다.
+//// #. 이 메세지 큐에 메세지를 담아 놓고 하나씩 처리할 것이다.
+//// #. 이 작업은 프로그램이 종료될때 까지 계속해서 반복한다.
+//		TranslateMessage(&msg);
+//// #. 메세지 큐에 메세지가 들어올 때는 운영체제에서 사용하는 메세지가 들어온다.
+//// #. 이 메세지를 앱에서 그대로 사용하기에는 규격이 맞지 않는다.
+//// #. 따라서 TranslateMessage()함수를 이용해서 번역하는 작업을 먼저 실행한다.
+//// #. 이 작업을 통해서 앱에서 사용할 수 있는 포맷으로 메세지를 바꿔준다.
+//		DispatchMessage(&msg);
+//// #. 앱에는 여러개의 윈도우가 있을 수 있다.
+//// #. 포맷이 완료된 메세지를 모든 윈도우들에게 전달하는 일을 해주는 함수가 DispatchMessage()함수다.
+//	}
+//
+//// #3-1. 프로그램 종료
+////		=> wParam : 현재 앱의 상태를 담고있는 포인터
+//	return static_cast<int>(msg.wParam);
+//}
+//
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//// #. DispatchMessage()함수를 거치고 나면 윈도우에 메세지가 전달된다.
+//// #. 윈도우 핸들을 통해 전달된 메세지를 switch문을 통해서 처리한다.
+//
+//	switch (message)
+//	{
+//		case WM_KEYDOWN:
+//		{
+//			std::wostringstream oss;
+//			oss << "Virtual Key = " << wParam << std::endl;
+//			OutputDebugString(oss.str().c_str());
+//// #. wParam에 저장된 가상 키보드의 키 값이 디버그 메시지 창에 출력된다.
+//			break;
+//		}
+//		case WM_LBUTTONDOWN:
+//		{
+//			std::wostringstream oss;
+//			oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
+//			OutputDebugString(oss.str().c_str());
+//// #. lParam에 저장된 x, y좌표를 디버그 메시지 창에 출력한다.
+//			break;
+//		}
+//		case WM_CLOSE:
+//			DestroyWindow(hWnd);
+//// #. 관심이 있는 항목은 케이스 레이블을 만들어서 따로 처리해 준다.
+//			break;
+//		default:
+//			return DefWindowProc(hWnd, message, wParam, lParam);
+//// #. 일반적인 항목은 기본 처리장치를 통해서 처리해 준다.
+//			break;
+//	}
+//	return 0;
+//}
+
+/* ------ < GDI( Graphics Device Interface ) > ----- */
+
+/*
+< GDI > : 윈도우즈에 붙어있는 어떤 그래픽 장치에도 다 그림을 그릴 수 있다라는 개념
+
+< Device Context > : 그림에 대한 정보들을 담아 놓은 장치
+	#. < HDC > : DC의 핸들
+	#. < GetDC() > : 어떤 장치에 그릴 것인지 지정하는 함수 HDC를 반환한다.
+
+< 좌표계( Coordinates ) >
+	#. Logical coordinates : 앱 윈도우 상의 좌표 지점
+	#. Physical coordinates : 모니터 상의 좌표 지점
+
+< PAINTSTRUCT 구조체 > : 그림을 그릴 영역이나 공간에 대한 정보를 가지고 있다.
+	#. BOOL fErase : 지우느냐 않지우느냐, 즉 배경을 지울 것인지
+	#. RECT rcPaint : RECT는 좌상단과 우하단의 좌표지점을 갖는 구조체이다.
+		=> 어디에 그릴지 사각형 영역을 지정한다.
+
+< Client Rect > : 실제로 그림이 그려지는 윈도우의 영역
+< Window Rect > : 제목 표시줄과 종료, 최소화키 등이 포함된 윈도우 영역
+
+< hatch > : 직선
+
+< CreateSolidBrush > :
+	#. < RGB > : HIWORD/ROWORD와 같은 개념으로 메모리 공간을 3등분 하여 원하는 값을 저장할 수 있다.
+		=> GetRValue(rgb)/GetGValue(rgb)/GetBValue(rgb)함수를 통해 바이트로 형변환하여 잘라버리고 추출할 수도 있다.
+
+< 그리는 과정 >
+	#1. 필요한 오브젝트를 만든다.
+	#2. 만들어진 오브젝트를 적용한다.
+	#3. 그림을 그린다.
+*/
+
 #include <Windows.h>
 #include <sstream>
 
@@ -255,7 +407,6 @@ int WINAPI WinMain(
 	wc.lpszClassName = gClassName;
 	wc.hInstance = hInstance;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.lpfnWndProc = WindowProc;
 	wc.cbSize = sizeof(WNDCLASSEX);
 
@@ -263,7 +414,7 @@ int WINAPI WinMain(
 //		=> 등록된 윈도우 클래스를 통해 윈도우를 찍어낼 수 있다.
 	if (!RegisterClassEx(&wc))
 	{
-		MessageBox(nullptr, L"Failed to register Class!", L"Error", MB_OK);
+		MessageBox(nullptr, L"Failed to Register Class!", L"Error", MB_OK);
 		return 0;
 	}
 
@@ -298,18 +449,8 @@ int WINAPI WinMain(
 	MSG msg;
 	while (GetMessage(&msg, nullptr, 0, 0))
 	{
-// #. 윈도우에서 실행되는 모든 App에는 '메세지 큐'라는 것이 있다.
-// #. 운영체제는 계속해서 수십개의 메세지를 전달할 것이다. 그럼 이 메세지를 쌓아 놓고 하나씩 처리할 필요가 있다.
-// #. 이 메세지 큐에 메세지를 담아 놓고 하나씩 처리할 것이다.
-// #. 이 작업은 프로그램이 종료될때 까지 계속해서 반복한다.
 		TranslateMessage(&msg);
-// #. 메세지 큐에 메세지가 들어올 때는 운영체제에서 사용하는 메세지가 들어온다.
-// #. 이 메세지를 앱에서 그대로 사용하기에는 규격이 맞지 않는다.
-// #. 따라서 TranslateMessage()함수를 이용해서 번역하는 작업을 먼저 실행한다.
-// #. 이 작업을 통해서 앱에서 사용할 수 있는 포맷으로 메세지를 바꿔준다.
 		DispatchMessage(&msg);
-// #. 앱에는 여러개의 윈도우가 있을 수 있다.
-// #. 포맷이 완료된 메세지를 모든 윈도우들에게 전달하는 일을 해주는 함수가 DispatchMessage()함수다.
 	}
 
 // #3-1. 프로그램 종료
@@ -317,19 +458,40 @@ int WINAPI WinMain(
 	return static_cast<int>(msg.wParam);
 }
 
+// #. 그리기와 관련된 기능을 처리하는 함수를 만들어 준다.
+void OnPaint(HWND hWnd)
+{
+	PAINTSTRUCT ps;
+	HDC hdc = BeginPaint(hWnd, &ps);
+// #. 어디에 어느 부분만큼 그릴지 지정한다.
+// #. 그림을 시작하고 끝나는 라인을 지정한다.
+
+	HBRUSH blueBrush = CreateSolidBrush(RGB(0, 0, 255));
+	SelectObject(hdc, blueBrush);
+	Rectangle(hdc, 0, 0, 100, 100);
+// #. 브러쉬 메모리 공간을 할당 받고 핸들로 저장한다.
+// #. 생성한 브러쉬를 그리기에 사용하도록 SelectObject()함수로 등록해 준다.
+// #. 사각형을 그릴때 등록한 브러쉬가 자동으로 사용된다.
+
+	DeleteObject(blueBrush);
+	EndPaint(hWnd, &ps);
+}
+
+// #4. 윈도우 프로시져
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-// #. DispatchMessage()함수를 거치고 나면 윈도우에 메세지가 전달된다.
-// #. 윈도우 핸들을 통해 전달된 메세지를 switch문을 통해서 처리한다.
-
 	switch (message)
 	{
+		case WM_PAINT:
+		{
+			OnPaint(hWnd);
+			break;
+		}
 		case WM_KEYDOWN:
 		{
 			std::wostringstream oss;
 			oss << "Virtual Key = " << wParam << std::endl;
 			OutputDebugString(oss.str().c_str());
-// #. wParam에 저장된 가상 키보드의 키 값이 디버그 메시지 창에 출력된다.
 			break;
 		}
 		case WM_LBUTTONDOWN:
@@ -337,16 +499,26 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 			std::wostringstream oss;
 			oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
 			OutputDebugString(oss.str().c_str());
-// #. lParam에 저장된 x, y좌표를 디버그 메시지 창에 출력한다.
+
+			HDC hdc = nullptr;
+			hdc = GetDC(hWnd);
+			Rectangle(hdc, 0, 0, 100, 100);
+			ReleaseDC(hWnd, hdc);
+// #. 마우스 왼쪽 버튼을 누르면 사각형을 그리는 명령어
+// #. hWnd를 전달하여 현재 만든 앱의 윈도우 화면에 그리도록 지정한다.
+// #. Rectangle()함수를 통해 hdc에 사각형을 그려준다.
+// #. GetDC로 인해 동적할당된 메모리를 ReleaseDC를 통해 동적해제한다.
+// #. 어떤 윈도우에 어떤 DC핸들을 해제할 것인지 매개 변수로 전달한다.
 			break;
 		}
 		case WM_CLOSE:
 			DestroyWindow(hWnd);
-// #. 관심이 있는 항목은 케이스 레이블을 만들어서 따로 처리해 준다.
+			break;
+		case WM_DESTROY:
+			PostQuitMessage(0);
 			break;
 		default:
 			return DefWindowProc(hWnd, message, wParam, lParam);
-// #. 일반적인 항목은 기본 처리장치를 통해서 처리해 준다.
 			break;
 	}
 	return 0;
