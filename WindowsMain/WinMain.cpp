@@ -385,6 +385,153 @@
 	#3. 그림을 그린다.
 */
 
+//#include <Windows.h>
+//#include <sstream>
+//
+//const wchar_t gClassName[]{ L"MyWindowClass" };
+//
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+//
+//int WINAPI WinMain(
+//	_In_ HINSTANCE hInstance,
+//	_In_opt_ HINSTANCE hPrevInstance,
+//	_In_ LPSTR lpCmdLine,
+//	_In_ int nShowCmd)
+//{
+//// #1. < 윈도우 클래스 생성 > : 윈도우 클래스라는 틀을 만들어 놓는다.
+////		=> 윈도우의 모양, 기능들을 묶어놓은 개념 집합
+//	WNDCLASSEX wc;
+//	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//
+//	wc.style = CS_HREDRAW | CS_VREDRAW;
+//	wc.lpszClassName = gClassName;
+//	wc.hInstance = hInstance;
+//	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//	wc.lpfnWndProc = WindowProc;
+//	wc.cbSize = sizeof(WNDCLASSEX);
+//
+//// #1-1. < 윈도우 클래스 등록 >
+////		=> 등록된 윈도우 클래스를 통해 윈도우를 찍어낼 수 있다.
+//	if (!RegisterClassEx(&wc))
+//	{
+//		MessageBox(nullptr, L"Failed to Register Class!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//// #2. 윈도우 생성
+//	HWND hWnd;
+//	hWnd = CreateWindowEx(
+//		NULL,
+//		gClassName,
+//		L"Hello Window",
+//		WS_OVERLAPPEDWINDOW,
+//		0, 0, 640, 480,
+//		nullptr, nullptr,
+//		hInstance,
+//		nullptr);
+//
+//// #2-1. 윈도우 생성 확인
+////		=> CreateWindowEx함수를 통해 윈도우 포인터를 받지 못하였을 경우
+//	if (hWnd == nullptr)
+//	{
+//		MessageBox(nullptr, L"Failed to Create Window!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//// #2-2. 윈도우가 정상적으로 만들어 졌을 경우
+////		=> 화면에 윈도우를 보여주고 윈도우를 갱신( 다시 그리기 )해준다.
+//	ShowWindow(hWnd, nShowCmd);
+//	UpdateWindow(hWnd);
+//
+//// #3. 메시지 루프
+////		=> 운영체제에 메세지가 있는지 물어보고 있으면 가져온다.
+////		=> 메세지가 없을 때까지 이 과정을 반복한다.
+//	MSG msg;
+//	while (GetMessage(&msg, nullptr, 0, 0))
+//	{
+//		TranslateMessage(&msg);
+//		DispatchMessage(&msg);
+//	}
+//
+//// #3-1. 프로그램 종료
+////		=> wParam : 현재 앱의 상태를 담고있는 포인터
+//	return static_cast<int>(msg.wParam);
+//}
+//
+//// #. 그리기와 관련된 기능을 처리하는 함수를 만들어 준다.
+//void OnPaint(HWND hWnd)
+//{
+//	PAINTSTRUCT ps;
+//	HDC hdc = BeginPaint(hWnd, &ps);
+//// #. 어디에 어느 부분만큼 그릴지 지정한다.
+//// #. 그림을 시작하고 끝나는 라인을 지정한다.
+//
+//	HBRUSH blueBrush = CreateSolidBrush(RGB(0, 0, 255));
+//	SelectObject(hdc, blueBrush);
+//	Rectangle(hdc, 0, 0, 100, 100);
+//// #. 브러쉬 메모리 공간을 할당 받고 핸들로 저장한다.
+//// #. 생성한 브러쉬를 그리기에 사용하도록 SelectObject()함수로 등록해 준다.
+//// #. 사각형을 그릴때 등록한 브러쉬가 자동으로 사용된다.
+//
+//	DeleteObject(blueBrush);
+//	EndPaint(hWnd, &ps);
+//}
+//
+//// #4. 윈도우 프로시져
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//	switch (message)
+//	{
+//		case WM_PAINT:
+//		{
+//			OnPaint(hWnd);
+//			break;
+//		}
+//		case WM_KEYDOWN:
+//		{
+//			std::wostringstream oss;
+//			oss << "Virtual Key = " << wParam << std::endl;
+//			OutputDebugString(oss.str().c_str());
+//			break;
+//		}
+//		case WM_LBUTTONDOWN:
+//		{
+//			std::wostringstream oss;
+//			oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
+//			OutputDebugString(oss.str().c_str());
+//
+//			HDC hdc = nullptr;
+//			hdc = GetDC(hWnd);
+//			Rectangle(hdc, 0, 0, 100, 100);
+//			ReleaseDC(hWnd, hdc);
+//// #. 마우스 왼쪽 버튼을 누르면 사각형을 그리는 명령어
+//// #. hWnd를 전달하여 현재 만든 앱의 윈도우 화면에 그리도록 지정한다.
+//// #. Rectangle()함수를 통해 hdc에 사각형을 그려준다.
+//// #. GetDC로 인해 동적할당된 메모리를 ReleaseDC를 통해 동적해제한다.
+//// #. 어떤 윈도우에 어떤 DC핸들을 해제할 것인지 매개 변수로 전달한다.
+//			break;
+//		}
+//		case WM_CLOSE:
+//			DestroyWindow(hWnd);
+//			break;
+//		case WM_DESTROY:
+//			PostQuitMessage(0);
+//			break;
+//		default:
+//			return DefWindowProc(hWnd, message, wParam, lParam);
+//			break;
+//	}
+//	return 0;
+//}
+
+/* ------ < GDI( Graphics Device Interface ) > ----- */
+
+/*
+< DC( Device Context ) > : DC를 통해 그림을 그리면 어떤 하드웨어든 적용될 수 있도록 그림을 일반화 시킬 수 있다.
+
+< Create(이름)Brush() > : 그림을 그릴때는 특정한 브러쉬와 오브젝트를 먼저 만들어서 그림을 그린다.
+*/
+
 #include <Windows.h>
 #include <sstream>
 
@@ -407,17 +554,16 @@ int WINAPI WinMain(
 	wc.lpszClassName = gClassName;
 	wc.hInstance = hInstance;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.lpfnWndProc = WindowProc;
 	wc.cbSize = sizeof(WNDCLASSEX);
-
 // #1-1. < 윈도우 클래스 등록 >
 //		=> 등록된 윈도우 클래스를 통해 윈도우를 찍어낼 수 있다.
 	if (!RegisterClassEx(&wc))
 	{
-		MessageBox(nullptr, L"Failed to Register Class!", L"Error", MB_OK);
+		MessageBox(nullptr, L"Failed to register class!", L"Error", MB_OK);
 		return 0;
 	}
-
 // #2. 윈도우 생성
 	HWND hWnd;
 	hWnd = CreateWindowEx(
@@ -426,23 +572,21 @@ int WINAPI WinMain(
 		L"Hello Window",
 		WS_OVERLAPPEDWINDOW,
 		0, 0, 640, 480,
-		nullptr, nullptr,
+		nullptr,
+		nullptr,
 		hInstance,
 		nullptr);
-
 // #2-1. 윈도우 생성 확인
 //		=> CreateWindowEx함수를 통해 윈도우 포인터를 받지 못하였을 경우
 	if (hWnd == nullptr)
 	{
-		MessageBox(nullptr, L"Failed to Create Window!", L"Error", MB_OK);
+		MessageBox(nullptr, L"Failed to create window!", L"Error", MB_OK);
 		return 0;
 	}
-
 // #2-2. 윈도우가 정상적으로 만들어 졌을 경우
 //		=> 화면에 윈도우를 보여주고 윈도우를 갱신( 다시 그리기 )해준다.
 	ShowWindow(hWnd, nShowCmd);
 	UpdateWindow(hWnd);
-
 // #3. 메시지 루프
 //		=> 운영체제에 메세지가 있는지 물어보고 있으면 가져온다.
 //		=> 메세지가 없을 때까지 이 과정을 반복한다.
@@ -457,69 +601,78 @@ int WINAPI WinMain(
 //		=> wParam : 현재 앱의 상태를 담고있는 포인터
 	return static_cast<int>(msg.wParam);
 }
-
 // #. 그리기와 관련된 기능을 처리하는 함수를 만들어 준다.
 void OnPaint(HWND hWnd)
 {
 	PAINTSTRUCT ps;
 	HDC hdc = BeginPaint(hWnd, &ps);
-// #. 어디에 어느 부분만큼 그릴지 지정한다.
-// #. 그림을 시작하고 끝나는 라인을 지정한다.
 
 	HBRUSH blueBrush = CreateSolidBrush(RGB(0, 0, 255));
 	SelectObject(hdc, blueBrush);
 	Rectangle(hdc, 0, 0, 100, 100);
-// #. 브러쉬 메모리 공간을 할당 받고 핸들로 저장한다.
-// #. 생성한 브러쉬를 그리기에 사용하도록 SelectObject()함수로 등록해 준다.
-// #. 사각형을 그릴때 등록한 브러쉬가 자동으로 사용된다.
+
+	HBRUSH hatchBrush = CreateHatchBrush(HS_CROSS, RGB(255, 0, 0));
+	SelectObject(hdc, hatchBrush);
+	Rectangle(hdc, 100, 100, 200, 200);
 
 	DeleteObject(blueBrush);
+	DeleteObject(hatchBrush);
+
+	HPEN greenPen = CreatePen(PS_DOT, 3, RGB(250, 150, 100));
+	SelectObject(hdc, greenPen);
+	MoveToEx(hdc, 0, 0, nullptr);
+	LineTo(hdc, 100, 100);
+	// #. Zero지점에서 시작하여 100, 100지점까지 선을 그어라.
+
+	SetPixel(hdc, 50, 80, RGB(255, 255, 255));
+
+	DeleteObject(greenPen);
 	EndPaint(hWnd, &ps);
 }
-
 // #4. 윈도우 프로시져
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
-		case WM_PAINT:
-		{
-			OnPaint(hWnd);
-			break;
-		}
-		case WM_KEYDOWN:
-		{
-			std::wostringstream oss;
-			oss << "Virtual Key = " << wParam << std::endl;
-			OutputDebugString(oss.str().c_str());
-			break;
-		}
-		case WM_LBUTTONDOWN:
-		{
-			std::wostringstream oss;
-			oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
-			OutputDebugString(oss.str().c_str());
-
-			HDC hdc = nullptr;
-			hdc = GetDC(hWnd);
-			Rectangle(hdc, 0, 0, 100, 100);
-			ReleaseDC(hWnd, hdc);
-// #. 마우스 왼쪽 버튼을 누르면 사각형을 그리는 명령어
-// #. hWnd를 전달하여 현재 만든 앱의 윈도우 화면에 그리도록 지정한다.
-// #. Rectangle()함수를 통해 hdc에 사각형을 그려준다.
-// #. GetDC로 인해 동적할당된 메모리를 ReleaseDC를 통해 동적해제한다.
-// #. 어떤 윈도우에 어떤 DC핸들을 해제할 것인지 매개 변수로 전달한다.
-			break;
-		}
-		case WM_CLOSE:
-			DestroyWindow(hWnd);
-			break;
-		case WM_DESTROY:
-			PostQuitMessage(0);
-			break;
-		default:
-			return DefWindowProc(hWnd, message, wParam, lParam);
-			break;
+	case WM_PAINT:
+	{
+		OnPaint(hWnd);
+		break;
 	}
+
+	case WM_KEYDOWN:
+	{
+		std::wostringstream oss;
+		oss << "Virtual Key = " << wParam << std::endl;
+		OutputDebugString(oss.str().c_str());
+		break;
+	}
+
+	case WM_LBUTTONDOWN:
+	{
+		std::wostringstream oss;
+		oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
+		OutputDebugString(oss.str().c_str());
+
+		HDC hdc = nullptr;
+		hdc = GetDC(hWnd);
+		Rectangle(hdc, 0, 0, 100, 100);
+		ReleaseDC(hWnd, hdc);
+		break;
+	}
+
+	case WM_CLOSE:
+		DestroyWindow(hWnd);
+		break;
+
+	case WM_DESTROY:
+		PostQuitMessage(0);
+		break;
+
+	default:
+		return DefWindowProc(hWnd, message, wParam, lParam);
+		break;
+	}
+
 	return 0;
 }
