@@ -532,8 +532,168 @@
 < Create(이름)Brush() > : 그림을 그릴때는 특정한 브러쉬와 오브젝트를 먼저 만들어서 그림을 그린다.
 */
 
+//#include <Windows.h>
+//#include <sstream>
+//
+//const wchar_t gClassName[]{ L"MyWindowClass" };
+//
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+//
+//int WINAPI WinMain(
+//	_In_ HINSTANCE hInstance,
+//	_In_opt_ HINSTANCE hPrevInstance,
+//	_In_ LPSTR lpCmdLine,
+//	_In_ int nShowCmd)
+//{
+//// #1. < 윈도우 클래스 생성 > : 윈도우 클래스라는 틀을 만들어 놓는다.
+////		=> 윈도우의 모양, 기능들을 묶어놓은 개념 집합
+//	WNDCLASSEX wc;
+//	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//
+//	wc.style = CS_HREDRAW | CS_VREDRAW;
+//	wc.lpszClassName = gClassName;
+//	wc.hInstance = hInstance;
+//	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//	wc.lpfnWndProc = WindowProc;
+//	wc.cbSize = sizeof(WNDCLASSEX);
+//// #1-1. < 윈도우 클래스 등록 >
+////		=> 등록된 윈도우 클래스를 통해 윈도우를 찍어낼 수 있다.
+//	if (!RegisterClassEx(&wc))
+//	{
+//		MessageBox(nullptr, L"Failed to register class!", L"Error", MB_OK);
+//		return 0;
+//	}
+//// #2. 윈도우 생성
+//	HWND hWnd;
+//	hWnd = CreateWindowEx(
+//		NULL,
+//		gClassName,
+//		L"Hello Window",
+//		WS_OVERLAPPEDWINDOW,
+//		0, 0, 640, 480,
+//		nullptr,
+//		nullptr,
+//		hInstance,
+//		nullptr);
+//// #2-1. 윈도우 생성 확인
+////		=> CreateWindowEx함수를 통해 윈도우 포인터를 받지 못하였을 경우
+//	if (hWnd == nullptr)
+//	{
+//		MessageBox(nullptr, L"Failed to create window!", L"Error", MB_OK);
+//		return 0;
+//	}
+//// #2-2. 윈도우가 정상적으로 만들어 졌을 경우
+////		=> 화면에 윈도우를 보여주고 윈도우를 갱신( 다시 그리기 )해준다.
+//	ShowWindow(hWnd, nShowCmd);
+//	UpdateWindow(hWnd);
+//// #3. 메시지 루프
+////		=> 운영체제에 메세지가 있는지 물어보고 있으면 가져온다.
+////		=> 메세지가 없을 때까지 이 과정을 반복한다.
+//	MSG msg;
+//	while (GetMessage(&msg, nullptr, 0, 0))
+//	{
+//		TranslateMessage(&msg);
+//		DispatchMessage(&msg);
+//	}
+//
+//// #3-1. 프로그램 종료
+////		=> wParam : 현재 앱의 상태를 담고있는 포인터
+//	return static_cast<int>(msg.wParam);
+//}
+//// #. 그리기와 관련된 기능을 처리하는 함수를 만들어 준다.
+//void OnPaint(HWND hWnd)
+//{
+//	PAINTSTRUCT ps;
+//	HDC hdc = BeginPaint(hWnd, &ps);
+//
+//	HBRUSH blueBrush = CreateSolidBrush(RGB(0, 0, 255));
+//	SelectObject(hdc, blueBrush);
+//	Rectangle(hdc, 0, 0, 100, 100);
+//
+//	HBRUSH hatchBrush = CreateHatchBrush(HS_CROSS, RGB(255, 0, 0));
+//	SelectObject(hdc, hatchBrush);
+//	Rectangle(hdc, 100, 100, 200, 200);
+//
+//	DeleteObject(blueBrush);
+//	DeleteObject(hatchBrush);
+//
+//	HPEN greenPen = CreatePen(PS_DOT, 3, RGB(250, 150, 100));
+//	SelectObject(hdc, greenPen);
+//	MoveToEx(hdc, 0, 0, nullptr);
+//	LineTo(hdc, 100, 100);
+//	// #. Zero지점에서 시작하여 100, 100지점까지 선을 그어라.
+//
+//	SetPixel(hdc, 50, 80, RGB(255, 255, 255));
+//
+//	DeleteObject(greenPen);
+//	EndPaint(hWnd, &ps);
+//}
+//// #4. 윈도우 프로시져
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//	switch (message)
+//	{
+//	case WM_PAINT:
+//	{
+//		OnPaint(hWnd);
+//		break;
+//	}
+//
+//	case WM_KEYDOWN:
+//	{
+//		std::wostringstream oss;
+//		oss << "Virtual Key = " << wParam << std::endl;
+//		OutputDebugString(oss.str().c_str());
+//		break;
+//	}
+//
+//	case WM_LBUTTONDOWN:
+//	{
+//		std::wostringstream oss;
+//		oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
+//		OutputDebugString(oss.str().c_str());
+//
+//		HDC hdc = nullptr;
+//		hdc = GetDC(hWnd);
+//		Rectangle(hdc, 0, 0, 100, 100);
+//		ReleaseDC(hWnd, hdc);
+//		break;
+//	}
+//
+//	case WM_CLOSE:
+//		DestroyWindow(hWnd);
+//		break;
+//
+//	case WM_DESTROY:
+//		PostQuitMessage(0);
+//		break;
+//
+//	default:
+//		return DefWindowProc(hWnd, message, wParam, lParam);
+//		break;
+//	}
+//
+//	return 0;
+//}
+
+/* ------ < GDI plus( Graphics Device Interface ) > ----- */
+
+/*
+< GDI > : 윈도우의 기본 시스템( C언어 )
+
+< GDI+ > : 윈도우의 확장 시스템( C++언어 )
+	#. < GdiplusStartupInput > : Gdiplus를 기동시키기 위해 넘겨줄 변수
+	#. < Token > : Gdiplus를 기동 시키기 위한 입장권 같은 개념
+	#. < GdiplusStartup > : Gdiplus를 기동시키기 위한 함수
+*/
+
 #include <Windows.h>
 #include <sstream>
+
+// #1. 표준 기능이 아니기 때문에 헤더 파일과 라이브러리를 외부에서 가져와야 한다.
+#include <gdiplus.h>
+#pragma comment (lib, "Gdiplus.lib")
 
 const wchar_t gClassName[]{ L"MyWindowClass" };
 
@@ -545,8 +705,14 @@ int WINAPI WinMain(
 	_In_ LPSTR lpCmdLine,
 	_In_ int nShowCmd)
 {
-// #1. < 윈도우 클래스 생성 > : 윈도우 클래스라는 틀을 만들어 놓는다.
-//		=> 윈도우의 모양, 기능들을 묶어놓은 개념 집합
+// #2. GDIplus를 추가적으로 초기화 해주어야 한다.
+//		=> 변수를 만든면 기본 생성자를 통해서 내부 구조가 기본 값으로 채워 진다.
+//		=> 이 번수를 GdiplusStartup함수를 통해서 초기화 해준다.
+	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+	ULONG_PTR gdiplusToken;
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+
+
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
@@ -557,39 +723,38 @@ int WINAPI WinMain(
 	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.lpfnWndProc = WindowProc;
 	wc.cbSize = sizeof(WNDCLASSEX);
-// #1-1. < 윈도우 클래스 등록 >
-//		=> 등록된 윈도우 클래스를 통해 윈도우를 찍어낼 수 있다.
+
 	if (!RegisterClassEx(&wc))
 	{
 		MessageBox(nullptr, L"Failed to register class!", L"Error", MB_OK);
 		return 0;
 	}
-// #2. 윈도우 생성
+
+	RECT wr{ 0,0,640,480 };
+	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+// #. 사각형 구조체를 만들고 이 사각형의 클라이언트 영역을 알아낸다.
+
 	HWND hWnd;
 	hWnd = CreateWindowEx(
 		NULL,
 		gClassName,
 		L"Hello Window",
 		WS_OVERLAPPEDWINDOW,
-		0, 0, 640, 480,
+		0, 0, wr.right - wr.left, wr.bottom - wr.top,
 		nullptr,
 		nullptr,
 		hInstance,
 		nullptr);
-// #2-1. 윈도우 생성 확인
-//		=> CreateWindowEx함수를 통해 윈도우 포인터를 받지 못하였을 경우
+
 	if (hWnd == nullptr)
 	{
 		MessageBox(nullptr, L"Failed to create window!", L"Error", MB_OK);
 		return 0;
 	}
-// #2-2. 윈도우가 정상적으로 만들어 졌을 경우
-//		=> 화면에 윈도우를 보여주고 윈도우를 갱신( 다시 그리기 )해준다.
+
 	ShowWindow(hWnd, nShowCmd);
 	UpdateWindow(hWnd);
-// #3. 메시지 루프
-//		=> 운영체제에 메세지가 있는지 물어보고 있으면 가져온다.
-//		=> 메세지가 없을 때까지 이 과정을 반복한다.
+
 	MSG msg;
 	while (GetMessage(&msg, nullptr, 0, 0))
 	{
@@ -597,78 +762,79 @@ int WINAPI WinMain(
 		DispatchMessage(&msg);
 	}
 
-// #3-1. 프로그램 종료
-//		=> wParam : 현재 앱의 상태를 담고있는 포인터
+// #4. 만들어진 메모리 공간을 해제한다.
+	Gdiplus::GdiplusShutdown(gdiplusToken);
+
 	return static_cast<int>(msg.wParam);
 }
-// #. 그리기와 관련된 기능을 처리하는 함수를 만들어 준다.
+
 void OnPaint(HWND hWnd)
 {
 	PAINTSTRUCT ps;
 	HDC hdc = BeginPaint(hWnd, &ps);
 
-	HBRUSH blueBrush = CreateSolidBrush(RGB(0, 0, 255));
-	SelectObject(hdc, blueBrush);
-	Rectangle(hdc, 0, 0, 100, 100);
+// #3. 클래스를 통해 브러쉬/팬을 만든다.
+//		=> 클래스이기 때문에 소멸자로 메모리가 자동으로 해제된다.
+	Gdiplus::Graphics graphics(hdc);
+	Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255));
+	graphics.DrawRectangle(&pen, 0, 0, 100, 100);
 
-	HBRUSH hatchBrush = CreateHatchBrush(HS_CROSS, RGB(255, 0, 0));
-	SelectObject(hdc, hatchBrush);
-	Rectangle(hdc, 100, 100, 200, 200);
+	Gdiplus::SolidBrush brush(Gdiplus::Color::PowderBlue);
+	Gdiplus::FontFamily fontFamily(L"맑은 고딕");
+	Gdiplus::Font font(&fontFamily, 24, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+	Gdiplus::PointF pt(0.0f, 110.0f);
 
-	DeleteObject(blueBrush);
-	DeleteObject(hatchBrush);
+	graphics.DrawString(L"맑은 고딕 입니다.", -1, &font, pt, &brush);
 
-	HPEN greenPen = CreatePen(PS_DOT, 3, RGB(250, 150, 100));
-	SelectObject(hdc, greenPen);
-	MoveToEx(hdc, 0, 0, nullptr);
-	LineTo(hdc, 100, 100);
-	// #. Zero지점에서 시작하여 100, 100지점까지 선을 그어라.
+	Gdiplus::Image image(L"Image.png");
+	graphics.DrawImage(&image, 0, 0, 
+		image.GetWidth(), image.GetHeight());
+// #. 외부의 이미지를 실행파일에 담을 수 있다.
+// #. Image클래스로 이미지를 등록하고 graphics객체를 통해 그린다.
+// #. 이미지는 원본 사이즈 그대로 그리는 것이 가장 빠르고 깨끗하다.
 
-	SetPixel(hdc, 50, 80, RGB(255, 255, 255));
-
-	DeleteObject(greenPen);
 	EndPaint(hWnd, &ps);
 }
-// #4. 윈도우 프로시져
+
 LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
 	case WM_PAINT:
-	{
-		OnPaint(hWnd);
-		break;
-	}
+		{
+			OnPaint(hWnd);
+			break;
+		}
 
 	case WM_KEYDOWN:
-	{
-		std::wostringstream oss;
-		oss << "Virtual Key = " << wParam << std::endl;
-		OutputDebugString(oss.str().c_str());
-		break;
-	}
+		{
+			std::wostringstream oss;
+			oss << "Virtual Key = " << wParam << std::endl;
+			OutputDebugString(oss.str().c_str());
+			break;
+		}
 
 	case WM_LBUTTONDOWN:
-	{
-		std::wostringstream oss;
-		oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
-		OutputDebugString(oss.str().c_str());
+		{
+			std::wostringstream oss;
+			oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
+			OutputDebugString(oss.str().c_str());
 
-		HDC hdc = nullptr;
-		hdc = GetDC(hWnd);
-		Rectangle(hdc, 0, 0, 100, 100);
-		ReleaseDC(hWnd, hdc);
-		break;
-	}
+			HDC hdc = nullptr;
+			hdc = GetDC(hWnd);
+			Rectangle(hdc, 0, 0, 100, 100);
+			ReleaseDC(hWnd, hdc);
+			break;
+		}
 
 	case WM_CLOSE:
-		DestroyWindow(hWnd);
+		DestroyWindow(hWnd); 
 		break;
 
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-
+	
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 		break;
