@@ -688,16 +688,193 @@
 	#. < GdiplusStartup > : Gdiplus를 기동시키기 위한 함수
 */
 
-#include <Windows.h>
-#include <sstream>
+//#include <Windows.h>
+//#include <sstream>
+//
+//// #1. 표준 기능이 아니기 때문에 헤더 파일과 라이브러리를 외부에서 가져와야 한다.
+//#include <gdiplus.h>
+//#pragma comment (lib, "Gdiplus.lib")
+//
+//const wchar_t gClassName[]{ L"MyWindowClass" };
+//
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+//
+//int WINAPI WinMain(
+//	_In_ HINSTANCE hInstance,
+//	_In_opt_ HINSTANCE hPrevInstance,
+//	_In_ LPSTR lpCmdLine,
+//	_In_ int nShowCmd)
+//{
+//// #2. GDIplus를 추가적으로 초기화 해주어야 한다.
+////		=> 변수를 만든면 기본 생성자를 통해서 내부 구조가 기본 값으로 채워 진다.
+////		=> 이 번수를 GdiplusStartup함수를 통해서 초기화 해준다.
+//	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+//	ULONG_PTR gdiplusToken;
+//	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+//
+//
+//	WNDCLASSEX wc;
+//	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//
+//	wc.style = CS_HREDRAW | CS_VREDRAW;
+//	wc.lpszClassName = gClassName;
+//	wc.hInstance = hInstance;
+//	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//	wc.lpfnWndProc = WindowProc;
+//	wc.cbSize = sizeof(WNDCLASSEX);
+//
+//	if (!RegisterClassEx(&wc))
+//	{
+//		MessageBox(nullptr, L"Failed to register class!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//	RECT wr{ 0,0,640,480 };
+//	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+//// #. 사각형 구조체를 만들고 이 사각형의 클라이언트 영역을 알아낸다.
+//
+//	HWND hWnd;
+//	hWnd = CreateWindowEx(
+//		NULL,
+//		gClassName,
+//		L"Hello Window",
+//		WS_OVERLAPPEDWINDOW,
+//		0, 0, wr.right - wr.left, wr.bottom - wr.top,
+//		nullptr,
+//		nullptr,
+//		hInstance,
+//		nullptr);
+//
+//	if (hWnd == nullptr)
+//	{
+//		MessageBox(nullptr, L"Failed to create window!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//	ShowWindow(hWnd, nShowCmd);
+//	UpdateWindow(hWnd);
+//
+//	MSG msg;
+//	while (GetMessage(&msg, nullptr, 0, 0))
+//	{
+//		TranslateMessage(&msg);
+//		DispatchMessage(&msg);
+//	}
+//
+//// #4. 만들어진 메모리 공간을 해제한다.
+//	Gdiplus::GdiplusShutdown(gdiplusToken);
+//
+//	return static_cast<int>(msg.wParam);
+//}
+//
+//void OnPaint(HWND hWnd)
+//{
+//	PAINTSTRUCT ps;
+//	HDC hdc = BeginPaint(hWnd, &ps);
+//
+//// #3. 클래스를 통해 브러쉬/팬을 만든다.
+////		=> 클래스이기 때문에 소멸자로 메모리가 자동으로 해제된다.
+//	Gdiplus::Graphics graphics(hdc);
+//	Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255));
+//	graphics.DrawRectangle(&pen, 0, 0, 100, 100);
+//
+//	Gdiplus::SolidBrush brush(Gdiplus::Color::PowderBlue);
+//	Gdiplus::FontFamily fontFamily(L"맑은 고딕");
+//	Gdiplus::Font font(&fontFamily, 24, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
+//	Gdiplus::PointF pt(0.0f, 110.0f);
+//
+//	graphics.DrawString(L"맑은 고딕 입니다.", -1, &font, pt, &brush);
+//
+//	Gdiplus::Image image(L"Image.png");
+//	graphics.DrawImage(&image, 0, 0, 
+//		image.GetWidth(), image.GetHeight());
+//// #. 외부의 이미지를 실행파일에 담을 수 있다.
+//// #. Image클래스로 이미지를 등록하고 graphics객체를 통해 그린다.
+//// #. 이미지는 원본 사이즈 그대로 그리는 것이 가장 빠르고 깨끗하다.
+//
+//	EndPaint(hWnd, &ps);
+//}
+//
+//LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//	switch (message)
+//	{
+//	case WM_PAINT:
+//		{
+//			OnPaint(hWnd);
+//			break;
+//		}
+//
+//	case WM_KEYDOWN:
+//		{
+//			std::wostringstream oss;
+//			oss << "Virtual Key = " << wParam << std::endl;
+//			OutputDebugString(oss.str().c_str());
+//			break;
+//		}
+//
+//	case WM_LBUTTONDOWN:
+//		{
+//			std::wostringstream oss;
+//			oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
+//			OutputDebugString(oss.str().c_str());
+//
+//			HDC hdc = nullptr;
+//			hdc = GetDC(hWnd);
+//			Rectangle(hdc, 0, 0, 100, 100);
+//			ReleaseDC(hWnd, hdc);
+//			break;
+//		}
+//
+//	case WM_CLOSE:
+//		DestroyWindow(hWnd); 
+//		break;
+//
+//	case WM_DESTROY:
+//		PostQuitMessage(0);
+//		break;
+//	
+//	default:
+//		return DefWindowProc(hWnd, message, wParam, lParam);
+//		break;
+//	}
+//
+//	return 0;
+//}
 
-// #1. 표준 기능이 아니기 때문에 헤더 파일과 라이브러리를 외부에서 가져와야 한다.
-#include <gdiplus.h>
+/* ------ < 카드 게임 만들기 > ----- */
+
+/*
+< 구성 >
+	#. 가로8 X 세로5
+	#. 카드 3종류( 용, 곰, 늑대 )
+
+< 규칙 >
+	#. < CARD >
+		=> 카드 그리기( Rendering ) : 앞면/뒷면
+		=> 카드를 클릭하면 카드를 뒤집는다.
+
+	#. < BACKGROUND >
+		=> 배경 그리기( Rendering )
+		=> 40장의 카드를 섞어준다.
+		=> 카드를 비교( 이전에 선택한 카드와 현태 선택한 카드 ) : 같으면 제거, 다르면 뒤집기
+		=> 클리어 조건 : 카드를 모두 없에면 클리어
+*/
+
+#include "GameLogic.h"
 #pragma comment (lib, "Gdiplus.lib")
 
 const wchar_t gClassName[]{ L"MyWindowClass" };
 
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+// #19. 게임 로직을 만든다.
+solitaire::GameLogic gLogic;
+
+// #8. 카드를 담을 공간을 list컨테이너로 만들어 준다.
+//		=> 카드가 컨테이너 공간 중간에서 빠져나갈 수 있기 때문에 vector가 아닌 list를 사용한다.
+//std::list<solitaire::Card> myDeck;
 
 int WINAPI WinMain(
 	_In_ HINSTANCE hInstance,
@@ -705,17 +882,18 @@ int WINAPI WinMain(
 	_In_ LPSTR lpCmdLine,
 	_In_ int nShowCmd)
 {
-// #2. GDIplus를 추가적으로 초기화 해주어야 한다.
-//		=> 변수를 만든면 기본 생성자를 통해서 내부 구조가 기본 값으로 채워 진다.
-//		=> 이 번수를 GdiplusStartup함수를 통해서 초기화 해준다.
+	// #1. GDI+를 사용하기 위해 먼저 초기화를 진행한다.
+	//		=> 메모리 공간 할당과 함께 소멸도 짝으로 맞추어 준다.
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
 	ULONG_PTR gdiplusToken;
 	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 
+	//myDeck.push_back(solitaire::Card(solitaire::Type::Bear, 0, 0));
+	//myDeck.push_back(solitaire::Card(solitaire::Type::Dragon, 120, 0));
+	//myDeck.push_back(solitaire::Card(solitaire::Type::Wolf, 240, 0));
 
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
-
 	wc.style = CS_HREDRAW | CS_VREDRAW;
 	wc.lpszClassName = gClassName;
 	wc.hInstance = hInstance;
@@ -723,34 +901,37 @@ int WINAPI WinMain(
 	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
 	wc.lpfnWndProc = WindowProc;
 	wc.cbSize = sizeof(WNDCLASSEX);
-
 	if (!RegisterClassEx(&wc))
 	{
-		MessageBox(nullptr, L"Failed to register class!", L"Error", MB_OK);
+		MessageBox(nullptr, L"Failed to register window class!", L"Error", MB_OK);
 		return 0;
 	}
 
-	RECT wr{ 0,0,640,480 };
-	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
-// #. 사각형 구조체를 만들고 이 사각형의 클라이언트 영역을 알아낸다.
+	// #2. 클라이언트 영역을 직접 제어할 예정이기 때문에 크기를 직접 지정해 준다.
+	RECT wr{ 0,0,1024,768 };
+	AdjustWindowRect(&wr, WS_OVERLAPPED | WS_SYSMENU, FALSE);
 
-	HWND hWnd;
-	hWnd = CreateWindowEx(
-		NULL,
+	HWND hWnd = CreateWindowEx(
+		0,
 		gClassName,
-		L"Hello Window",
-		WS_OVERLAPPEDWINDOW,
-		0, 0, wr.right - wr.left, wr.bottom - wr.top,
+		L"Solitare Game",
+		WS_OVERLAPPED | WS_SYSMENU,
+		0, 0,
+		wr.right - wr.left,
+		wr.bottom - wr.top,
 		nullptr,
 		nullptr,
 		hInstance,
-		nullptr);
-
+		nullptr
+	);
 	if (hWnd == nullptr)
 	{
-		MessageBox(nullptr, L"Failed to create window!", L"Error", MB_OK);
+		MessageBox(nullptr, L"Failed to Create Window!", L"Error", MB_OK);
 		return 0;
 	}
+
+	// #20. 윈도우가 만들어진 뒤에 gLogic을 초기화 해준다.
+	gLogic.Init(hWnd);
 
 	ShowWindow(hWnd, nShowCmd);
 	UpdateWindow(hWnd);
@@ -762,83 +943,62 @@ int WINAPI WinMain(
 		DispatchMessage(&msg);
 	}
 
-// #4. 만들어진 메모리 공간을 해제한다.
-	Gdiplus::GdiplusShutdown(gdiplusToken);
+	gLogic.Release();
 
+	// #. 생성자를 통해 만들어진 이미지들은 컨테이너 소멸과 함꼐 소멸자가 호출되며 해제된다.
+		//myDeck.clear();
+	Gdiplus::GdiplusShutdown(gdiplusToken);
 	return static_cast<int>(msg.wParam);
 }
 
-void OnPaint(HWND hWnd)
+void OnPaint(HWND hwnd)
 {
+	HDC hdc;
 	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(hWnd, &ps);
 
-// #3. 클래스를 통해 브러쉬/팬을 만든다.
-//		=> 클래스이기 때문에 소멸자로 메모리가 자동으로 해제된다.
+	hdc = BeginPaint(hwnd, &ps);
+
+	// #3. 모든 GDI+의 기능들은 Graphics객체를 통해 사용된다.
+	//		=> Graphics객체를 먼저 만들어 준다.
 	Gdiplus::Graphics graphics(hdc);
-	Gdiplus::Pen pen(Gdiplus::Color(255, 0, 0, 255));
-	graphics.DrawRectangle(&pen, 0, 0, 100, 100);
 
-	Gdiplus::SolidBrush brush(Gdiplus::Color::PowderBlue);
-	Gdiplus::FontFamily fontFamily(L"맑은 고딕");
-	Gdiplus::Font font(&fontFamily, 24, Gdiplus::FontStyleRegular, Gdiplus::UnitPixel);
-	Gdiplus::PointF pt(0.0f, 110.0f);
+	//for (auto& card : myDeck)
+	//{
+	//	card.Flip(true);
+	//	card.Draw(graphics);
+	//}
 
-	graphics.DrawString(L"맑은 고딕 입니다.", -1, &font, pt, &brush);
+// #21. 게임을 관리하는 클래스 gLogic에서 Draw함수를 불러주면 내부에서 카드를 그려준다.
+	gLogic.Draw(graphics);
 
-	Gdiplus::Image image(L"Image.png");
-	graphics.DrawImage(&image, 0, 0, 
-		image.GetWidth(), image.GetHeight());
-// #. 외부의 이미지를 실행파일에 담을 수 있다.
-// #. Image클래스로 이미지를 등록하고 graphics객체를 통해 그린다.
-// #. 이미지는 원본 사이즈 그대로 그리는 것이 가장 빠르고 깨끗하다.
-
-	EndPaint(hWnd, &ps);
+	EndPaint(hwnd, &ps);
 }
 
-LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch (message)
 	{
+		// #22. 마우스가 클릭되면 gLogic의 클릭함수에게 맡긴다.
+	case WM_LBUTTONUP:
+		gLogic.OnClick(LOWORD(lParam), HIWORD(lParam));
+		// #. 마우스 버튼에는 버튼 좌표가 LPARAM에 두 개로 나누어서 저장되어 있다.
+		//		=> x = LOWORD/y = HIWORD
+		break;
+
 	case WM_PAINT:
-		{
-			OnPaint(hWnd);
-			break;
-		}
-
-	case WM_KEYDOWN:
-		{
-			std::wostringstream oss;
-			oss << "Virtual Key = " << wParam << std::endl;
-			OutputDebugString(oss.str().c_str());
-			break;
-		}
-
-	case WM_LBUTTONDOWN:
-		{
-			std::wostringstream oss;
-			oss << "X : " << LOWORD(lParam) << ", Y : " << HIWORD(lParam);
-			OutputDebugString(oss.str().c_str());
-
-			HDC hdc = nullptr;
-			hdc = GetDC(hWnd);
-			Rectangle(hdc, 0, 0, 100, 100);
-			ReleaseDC(hWnd, hdc);
-			break;
-		}
+		OnPaint(hwnd);
+		break;
 
 	case WM_CLOSE:
-		DestroyWindow(hWnd); 
+		DestroyWindow(hwnd);
 		break;
 
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
-	
-	default:
-		return DefWindowProc(hWnd, message, wParam, lParam);
-		break;
-	}
 
+	default:
+		return DefWindowProc(hwnd, message, wParam, lParam);
+	}
 	return 0;
 }
