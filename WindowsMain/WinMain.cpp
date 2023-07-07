@@ -862,143 +862,308 @@
 		=> 클리어 조건 : 카드를 모두 없에면 클리어
 */
 
-#include "GameLogic.h"
-#pragma comment (lib, "Gdiplus.lib")
+//#include "GameLogic.h"
+//#pragma comment (lib, "Gdiplus.lib")
+//
+//const wchar_t gClassName[]{ L"MyWindowClass" };
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+//
+//// #19. 게임 로직을 만든다.
+//solitaire::GameLogic gLogic;
+//
+//// #8. 카드를 담을 공간을 list컨테이너로 만들어 준다.
+////		=> 카드가 컨테이너 공간 중간에서 빠져나갈 수 있기 때문에 vector가 아닌 list를 사용한다.
+////std::list<solitaire::Card> myDeck;
+//
+//int WINAPI WinMain(
+//	_In_ HINSTANCE hInstance,
+//	_In_opt_ HINSTANCE hPrevInstance,
+//	_In_ LPSTR lpCmdLine,
+//	_In_ int nShowCmd)
+//{
+//	// #1. GDI+를 사용하기 위해 먼저 초기화를 진행한다.
+//	//		=> 메모리 공간 할당과 함께 소멸도 짝으로 맞추어 준다.
+//	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
+//	ULONG_PTR gdiplusToken;
+//	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+//	//	=> token : GDI+ 초기화 작업을 식별하는데 사용되는 토큰
+//	//	=> input : GDI+ 초기화를 제어하는데 사용되는 구조체
+//	//	=> output : GDI+ 초기화 작업의 결과를 담는 구조체
+//
+//	//myDeck.push_back(solitaire::Card(solitaire::Type::Bear, 0, 0));
+//	//myDeck.push_back(solitaire::Card(solitaire::Type::Dragon, 120, 0));
+//	//myDeck.push_back(solitaire::Card(solitaire::Type::Wolf, 240, 0));
+//
+//	WNDCLASSEX wc;
+//	ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//	wc.style = CS_HREDRAW | CS_VREDRAW;
+//	wc.lpszClassName = gClassName;
+//	wc.hInstance = hInstance;
+//	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//	wc.lpfnWndProc = WindowProc;
+//	wc.cbSize = sizeof(WNDCLASSEX);
+//	if (!RegisterClassEx(&wc))
+//	{
+//		MessageBox(nullptr, L"Failed to register window class!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//	// #2. 클라이언트 영역을 직접 제어할 예정이기 때문에 크기를 직접 지정해 준다.
+//	RECT wr{ 0,0,1024,768 };
+//	AdjustWindowRect(&wr, WS_OVERLAPPED | WS_SYSMENU, FALSE);
+//
+//	HWND hWnd = CreateWindowEx(
+//		0,
+//		gClassName,
+//		L"Solitare Game",
+//		WS_OVERLAPPED | WS_SYSMENU,
+//		0, 0,
+//		wr.right - wr.left,
+//		wr.bottom - wr.top,
+//		nullptr,
+//		nullptr,
+//		hInstance,
+//		nullptr
+//	);
+//	if (hWnd == nullptr)
+//	{
+//		MessageBox(nullptr, L"Failed to Create Window!", L"Error", MB_OK);
+//		return 0;
+//	}
+//
+//	// #20. 윈도우가 만들어진 뒤에 gLogic을 초기화 해준다.
+//	gLogic.Init(hWnd);
+//
+//	ShowWindow(hWnd, nShowCmd);
+//	UpdateWindow(hWnd);
+//
+//	MSG msg;
+//	while (GetMessage(&msg, nullptr, 0, 0))
+//	{
+//		TranslateMessage(&msg);
+//		DispatchMessage(&msg);
+//	}
+//
+//	gLogic.Release();
+//
+//	// #. 생성자를 통해 만들어진 이미지들은 컨테이너 소멸과 함꼐 소멸자가 호출되며 해제된다.
+//		//myDeck.clear();
+//	Gdiplus::GdiplusShutdown(gdiplusToken);
+//	return static_cast<int>(msg.wParam);
+//}
+//
+//void OnPaint(HWND hwnd)
+//{
+//	HDC hdc;
+//	PAINTSTRUCT ps;
+//
+//	hdc = BeginPaint(hwnd, &ps);
+//
+//	// #3. 모든 GDI+의 기능들은 Graphics객체를 통해 사용된다.
+//	//		=> Graphics객체를 먼저 만들어 준다.
+//	Gdiplus::Graphics graphics(hdc);
+//	//		=> hdc에는 그래픽 작업을 수행할 출력 디바이스에 대한 정보를 포함하고 있다.
+//
+//	//for (auto& card : myDeck)
+//	//{
+//	//	card.Flip(true);
+//	//	card.Draw(graphics);
+//	//}
+//
+//// #21. 게임을 관리하는 클래스 gLogic에서 Draw함수를 불러주면 내부에서 카드를 그려준다.
+//	gLogic.Draw(graphics);
+//
+//	EndPaint(hwnd, &ps);
+//}
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//	switch (message)
+//	{
+//		// #22. 마우스가 클릭되면 gLogic의 클릭함수에게 맡긴다.
+//	case WM_LBUTTONUP:
+//		gLogic.OnClick(LOWORD(lParam), HIWORD(lParam));
+//		// #. 마우스 버튼에는 버튼 좌표가 LPARAM에 두 개로 나누어서 저장되어 있다.
+//		//		=> x = LOWORD/y = HIWORD
+//		break;
+//
+//	case WM_PAINT:
+//		OnPaint(hwnd);
+//		break;
+//
+//	case WM_CLOSE:
+//		DestroyWindow(hwnd);
+//		break;
+//
+//	case WM_DESTROY:
+//		PostQuitMessage(0);
+//		break;
+//
+//	default:
+//		return DefWindowProc(hwnd, message, wParam, lParam);
+//	}
+//	return 0;
+//}
 
-const wchar_t gClassName[]{ L"MyWindowClass" };
+/* --- < Random > --- */
 
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+/*
+< rand() > : 운영체제 테이블에 나열되어 있는 숫자를 출력해 준다.
+	#. 0에서 부터 32767까지의 값을 테이블에 나열한다.
 
-// #19. 게임 로직을 만든다.
-solitaire::GameLogic gLogic;
+< 0 ~ 9( rand() % 10 ) >
+	#. 0부터 연산을 시작하여 10으로 나누어 값이 떨어지면 0 그게 아니면 1부터 9까지의 숫자가 나열된다.
 
-// #8. 카드를 담을 공간을 list컨테이너로 만들어 준다.
-//		=> 카드가 컨테이너 공간 중간에서 빠져나갈 수 있기 때문에 vector가 아닌 list를 사용한다.
-//std::list<solitaire::Card> myDeck;
+< 3 ~ 9( rand() % ( 10 - 3 + 1 ) + 3 >
+	#. 먼저 시작 숫자를 3에서 0으로 맞추어 준다. ( 0 ~ 6 )
+	#. 그 다음 0 ~ 6이 반복될 수 있는 나머지 몫을 지정해 준다. ( %7 )
+	#. 마지막으로 시작 숫자를 다시 원상 복귀 시킨다. ( 3 ~ 10 )
 
-int WINAPI WinMain(
-	_In_ HINSTANCE hInstance,
-	_In_opt_ HINSTANCE hPrevInstance,
-	_In_ LPSTR lpCmdLine,
-	_In_ int nShowCmd)
-{
-	// #1. GDI+를 사용하기 위해 먼저 초기화를 진행한다.
-	//		=> 메모리 공간 할당과 함께 소멸도 짝으로 맞추어 준다.
-	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-	ULONG_PTR gdiplusToken;
-	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
+< srand() > : 운영체제 테이블을 다시 만들어 준다.
+	#. 랜덤은 점화식으로 되어 있다.
+		=> 점화식이란 어떤 문제를 풀때 자기 자신의 이전 상태를 사용하는 것을 말한다.
+	#. srand에 시드를 지정해 주면 된다.
+		=> seed : 이곳에서 부터 씨앗을 뿌려서 파생된다.
 
-	//myDeck.push_back(solitaire::Card(solitaire::Type::Bear, 0, 0));
-	//myDeck.push_back(solitaire::Card(solitaire::Type::Dragon, 120, 0));
-	//myDeck.push_back(solitaire::Card(solitaire::Type::Wolf, 240, 0));
+< Mersenne Twister > : MT19937( C++ 11 )
+	#. 균등한 분포를 가진 랜덤 : std::uniform_int_distribution<> dist();
+*/
 
-	WNDCLASSEX wc;
-	ZeroMemory(&wc, sizeof(WNDCLASSEX));
-	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpszClassName = gClassName;
-	wc.hInstance = hInstance;
-	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-	wc.lpfnWndProc = WindowProc;
-	wc.cbSize = sizeof(WNDCLASSEX);
-	if (!RegisterClassEx(&wc))
-	{
-		MessageBox(nullptr, L"Failed to register window class!", L"Error", MB_OK);
-		return 0;
-	}
+//#include <iostream>
+//
+//int main()
+//{
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << rand() << " ";
+//	}	std::cout << std::endl;
+//}
 
-	// #2. 클라이언트 영역을 직접 제어할 예정이기 때문에 크기를 직접 지정해 준다.
-	RECT wr{ 0,0,1024,768 };
-	AdjustWindowRect(&wr, WS_OVERLAPPED | WS_SYSMENU, FALSE);
+//#include <iostream>
+//
+//int main()
+//{
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << rand() % 10 << " ";
+//// #. 나머지 연산을 통해서 지정한 값 안에서만 값이 출력되도록 할 수 있다.
+//	}	std::cout << std::endl;
+//}
 
-	HWND hWnd = CreateWindowEx(
-		0,
-		gClassName,
-		L"Solitare Game",
-		WS_OVERLAPPED | WS_SYSMENU,
-		0, 0,
-		wr.right - wr.left,
-		wr.bottom - wr.top,
-		nullptr,
-		nullptr,
-		hInstance,
-		nullptr
-	);
-	if (hWnd == nullptr)
-	{
-		MessageBox(nullptr, L"Failed to Create Window!", L"Error", MB_OK);
-		return 0;
-	}
+//#include <iostream>
+//
+//int main()
+//{
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << rand() % (10 - 3 + 1) + 3 << " ";
+//// #. rand() % ( end - start + 1 ) + start
+//	}	std::cout << std::endl;
+//}
 
-	// #20. 윈도우가 만들어진 뒤에 gLogic을 초기화 해준다.
-	gLogic.Init(hWnd);
+//#include <iostream>
+//
+//int main()
+//{
+//	srand(10);	// #. 10을 시드로 지정하여 테이블을 다시 만든다.
+////		=> 그러나 이는 때때로 따른 운영체제와 중복되는 값을 만들 수가 있다.
+//
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << rand() % 10 << " ";
+//	}	std::cout << std::endl;
+//}
 
-	ShowWindow(hWnd, nShowCmd);
-	UpdateWindow(hWnd);
+//#include <iostream>
+//
+//int main()
+//{
+//	srand(static_cast<unsigned int >(time(nullptr)));	// #. 컴퓨터가 켜진 후 지난 시간은 시드로 지정한다.
+//
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << rand() % 10 << " ";
+//	}	std::cout << std::endl;
+//}
 
-	MSG msg;
-	while (GetMessage(&msg, nullptr, 0, 0))
-	{
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	}
+//#include <iostream>
+//#include <random>
+//
+//int main()
+//{
+//	std::random_device rd;		// #. 랜덤하게 하드웨어에서 값을 뽑아 오는 클래스
+//	std::mt19937 gen(rd());		// #. operator()가 정의 되어 있는 랜덤 디바이스 클래스를 함수 객체로 호출
+//
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << gen() % 10 << " ";
+//	}	std::cout << std::endl;
+//}
 
-	gLogic.Release();
+//#include <iostream>
+//#include <random>
+//
+//int main()
+//{
+//	std::random_device rd;
+//	std::mt19937 gen(rd());
+//
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << gen() % 10 << " ";
+//	}	std::cout << std::endl;
+//
+//	std::uniform_int_distribution<> dist(0, 9);
+//	for (int i = 0; i < 20; i++)
+//	{
+//		std::cout << dist(gen) << " ";
+//	}	std::cout << std::endl;
+//}
 
-	// #. 생성자를 통해 만들어진 이미지들은 컨테이너 소멸과 함꼐 소멸자가 호출되며 해제된다.
-		//myDeck.clear();
-	Gdiplus::GdiplusShutdown(gdiplusToken);
-	return static_cast<int>(msg.wParam);
-}
+//#include <iostream>
+//#include <random>
+//#include <vector>
+//
+//int main()
+//{
+//	std::vector<int> deck{ 1,2,3,4,5,6,7,8,9,10 };
+//
+//	std::random_device rd;
+//	std::mt19937 gen(rd());
+//	std::uniform_int_distribution<> dist(0, 9);
+//
+//	int i1, i2;
+//	for (int i = 0; i < deck.size(); i++)
+//	{
+//		i1 = dist(gen);
+//		i2 = dist(gen);
+//		std::swap(deck[i1], deck[i2]);
+//	}
+//	
+//	for (auto& e : deck)
+//	{
+//		std::cout << e << " ";
+//	}	std::cout << std::endl;
+//}
 
-void OnPaint(HWND hwnd)
-{
-	HDC hdc;
-	PAINTSTRUCT ps;
-
-	hdc = BeginPaint(hwnd, &ps);
-
-	// #3. 모든 GDI+의 기능들은 Graphics객체를 통해 사용된다.
-	//		=> Graphics객체를 먼저 만들어 준다.
-	Gdiplus::Graphics graphics(hdc);
-
-	//for (auto& card : myDeck)
-	//{
-	//	card.Flip(true);
-	//	card.Draw(graphics);
-	//}
-
-// #21. 게임을 관리하는 클래스 gLogic에서 Draw함수를 불러주면 내부에서 카드를 그려준다.
-	gLogic.Draw(graphics);
-
-	EndPaint(hwnd, &ps);
-}
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-	switch (message)
-	{
-		// #22. 마우스가 클릭되면 gLogic의 클릭함수에게 맡긴다.
-	case WM_LBUTTONUP:
-		gLogic.OnClick(LOWORD(lParam), HIWORD(lParam));
-		// #. 마우스 버튼에는 버튼 좌표가 LPARAM에 두 개로 나누어서 저장되어 있다.
-		//		=> x = LOWORD/y = HIWORD
-		break;
-
-	case WM_PAINT:
-		OnPaint(hwnd);
-		break;
-
-	case WM_CLOSE:
-		DestroyWindow(hwnd);
-		break;
-
-	case WM_DESTROY:
-		PostQuitMessage(0);
-		break;
-
-	default:
-		return DefWindowProc(hwnd, message, wParam, lParam);
-	}
-	return 0;
-}
+//#include <iostream>
+//#include <random>
+//#include <vector>
+//
+//int main()
+//{
+//	std::vector<int> deck{ 1,2,3,4,5,6,7,8,9,10 };
+//
+//	std::random_device rd;
+//	std::mt19937 gen(rd());
+//	std::uniform_int_distribution<> dist(0, 9);
+//
+//	std::shuffle(deck.begin(), deck.end(), gen);	// #. 컨테이너의 값들을 섞어 준다.
+//
+//	for (auto& e : deck)
+//	{
+//		std::cout << e << " ";
+//	}	std::cout << std::endl;
+//}
