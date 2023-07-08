@@ -45,29 +45,268 @@
 	#. 모든 다이렉트X의 생성과 관련된 것은 포인터의 포인터를 받는다.
 */
 
+//#include <windows.h>
+//
+//#include <d2d1.h>
+//#pragma comment(lib, "d2d1.lib")
+//// #. 다이렉트X는 기본 시스템이 아닌 추가 확장 시스템이다.
+//// #. 따라서 헤더와 라이브러리를 가져와야 한다.
+//
+//const wchar_t gClassName[] = L"MyWindowClass";
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+//
+//// 1. DirectX Factory 생성
+//// 2. RenderTarget 생성
+//// 3. 그리기( Rendering )
+//// 4. 리소스 해제
+//
+//// #. ID2D1( Interface Direct 2D Version 1 )
+//// #. COM의 오브젝트들은 전부 클래스 내부에서 메모리를 관리한다.
+//// #. COM내부에서 메모리를 가져와서 쓰는 형태가 많기 떄문에 모든 인터페이스는 포인터로 정의해야 한다.
+//ID2D1Factory* gpD2DFactory{};
+//ID2D1HwndRenderTarget* gpRenderTarget{};
+//
+//// #. 그리기 위한 도구를 다이렉트X 타입으로 만든다.
+//ID2D1SolidColorBrush* gpBrush{};
+//ID2D1RadialGradientBrush* gpRadialBrush{};
+//
+//int WINAPI WinMain(_In_ HINSTANCE hInstance,
+//    _In_opt_ HINSTANCE hPrevInstance,
+//    _In_ LPSTR lpCmdLine,
+//    _In_ int nShowCmd)
+//{
+//    // #1-1. 팩토리를 만드는 도우미 함수 CreateFactory
+//    // #1-2. 팩토리 타입과 만들어진 팩토리에 대한 더블 포인터를 매개 변수로 전달한다.
+//    // #1-3. 반환은 HRESULT타입으로 반환한다.
+//    // #1-4. 이 도우미 함수를 통해 만들어진 Factory**를 gdD2DFactory포인터 변수로 받는다.
+//    HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &gpD2DFactory);
+//    if (FAILED(hr))
+//    {
+//        MessageBox(nullptr, L"Failed to create D2D Factory!!!", L"Error", MB_OK);
+//        return 0;
+//    }
+//
+//    HWND hwnd;
+//    WNDCLASSEX wc;
+//    ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//    wc.style = CS_HREDRAW | CS_VREDRAW;
+//    wc.lpszClassName = gClassName;
+//    wc.hInstance = hInstance;
+//    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//    wc.lpfnWndProc = WindowProc;
+//    wc.cbSize = sizeof(WNDCLASSEX);
+//    if (!RegisterClassEx(&wc))
+//    {
+//        MessageBox(nullptr, L"Failed to register window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+//        return 0;
+//    }
+//
+//    RECT wr = { 0, 0, 1024, 768 };
+//    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+//    hwnd = CreateWindowEx(NULL,
+//        gClassName,
+//        L"Direct2D",
+//        WS_OVERLAPPEDWINDOW,
+//        CW_USEDEFAULT,
+//        CW_USEDEFAULT,
+//        wr.right - wr.left,
+//        wr.bottom - wr.top,
+//        NULL,
+//        NULL,
+//        hInstance,
+//        NULL);
+//    if (hwnd == nullptr)
+//    {
+//        MessageBox(nullptr, L"Failed to create window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+//        return 0;
+//    }
+//
+//    // #2-1. 팩토리를 만들어 놓았기 때문에 다이렉트X와 관련된 모든것은 팩토리를 통해서 만들면 된다.
+//    // #2-2. 렌더타겟에 대한 속성( 렌더링 타입으로 CPU, GPU중 어떤 타입으로 할지, 픽셀 포맷이 어떤식인지,
+//    //      => 화면 해상도 조절, 렌더타겟의 사용처, 다이렉트X 최소버전 설치 요구 사항 )
+//    // #2-3. 두번째는 핸들과, 그릴 영역, V싱크를 할지 않할지
+//    GetClientRect(hwnd, &wr);
+//    hr = gpD2DFactory->CreateHwndRenderTarget(
+//        D2D1::RenderTargetProperties(),
+//        D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top)),
+//        &gpRenderTarget
+//    );
+//    if (FAILED(hr))
+//    {
+//        MessageBox(nullptr, L"Failed to create Render Target!", L"Error", MB_OK);
+//        return 0;
+//    }
+//
+//    // #3-2. 그리기와 관련된 것은 전부 렌더 타깃이 한다.
+//    hr = gpRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkOrange), &gpBrush);
+//
+//    // #3-3. 그라데이션을 받은 변수를 만들고 색깔 포인트 지점을 지정해 준다.
+//    //      => 임의로 두 개의 지점을 지정해 주고 그 지점의 색깔과 위치를 지정해 준다.
+//    ID2D1GradientStopCollection* pStops{};
+//    D2D1_GRADIENT_STOP gradientStops[2];
+//    gradientStops[0].color = D2D1::ColorF(D2D1::ColorF::Yellow);
+//    gradientStops[0].position = 0.0f;
+//    gradientStops[1].color = D2D1::ColorF(D2D1::ColorF::Red);
+//    gradientStops[1].position = 1.0f;
+//
+//    // #3-4. 그라데이션을 만들어 준다.
+//    //      => stop 배열을 주고, 배열의 개수를 주고, 만들어진 콜렉션을 전달해 준다.
+//    hr = gpRenderTarget->CreateGradientStopCollection(
+//        gradientStops,
+//        2,
+//        &pStops
+//    );
+//
+//    // #3-5. 만들어진 그라데이션을 통해 브러쉬를 만든다.
+//    hr = gpRenderTarget->CreateRadialGradientBrush(
+//        D2D1::RadialGradientBrushProperties(D2D1::Point2F(50, 150), D2D1::Point2F(0, 0), 50, 50),
+//        pStops,
+//        &gpRadialBrush
+//    );
+//
+//    if (pStops != nullptr)
+//    {
+//        pStops->Release();
+//        pStops = nullptr;
+//    }
+//
+//    ShowWindow(hwnd, nShowCmd);
+//    UpdateWindow(hwnd);
+//
+//    MSG msg;
+//    while (GetMessage(&msg, NULL, 0, 0))
+//    {
+//        TranslateMessage(&msg);
+//        DispatchMessage(&msg);
+//    }
+//
+//    // #4-1. 리소스 해제
+//    if (gpRadialBrush != nullptr)
+//    {
+//        gpRadialBrush->Release();
+//        gpRadialBrush = nullptr;
+//    }
+//    if (gpBrush != nullptr)
+//    {
+//        gpBrush->Release();
+//        gpBrush = nullptr;
+//    }
+//    if (gpRenderTarget != nullptr)
+//    {
+//        gpRenderTarget->Release();
+//        gpRenderTarget = nullptr;
+//    }
+//    if (gpD2DFactory != nullptr)
+//    {
+//        gpD2DFactory->Release();
+//        gpD2DFactory = nullptr;
+//    }
+//
+//    return static_cast<int>(msg.wParam);
+//}
+//
+//void OnPaint(HWND hwnd)
+//{
+//    HDC hdc;
+//    PAINTSTRUCT ps;
+//    hdc = BeginPaint(hwnd, &ps);
+//
+//    // #3-1. 그리기 시작과 끝을 지정해 준다.
+//    //      => Clear : 배경을 깨끗하게 지운다는 의미로 지정한 색으로 지운다.
+//    //      => ColorF : 색을 float타입으로 지정한다.
+//    gpRenderTarget->BeginDraw();
+//    gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
+//
+//    // #3-6. 사각형을 그리고 색칠한다.
+//    //      => 그릴 영역을 전달해 주고, 브러쉬를 지정해 준다.
+//    gpRenderTarget->FillRectangle(
+//        D2D1::RectF(0.0f, 0.0f, 100.0f, 100.0f),
+//        gpBrush
+//    );
+//
+//    // #3-7. 타원형을 그리고 색칠한다.
+//    gpRenderTarget->FillEllipse(
+//        D2D1::Ellipse(D2D1::Point2F(50.0f, 150.0f), 50.0f, 50.0f),
+//        gpRadialBrush
+//    );
+//    gpRenderTarget->EndDraw();
+//
+//    EndPaint(hwnd, &ps);
+//}
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//    switch (message)
+//    {
+//    case WM_PAINT:
+//        OnPaint(hwnd);
+//        break;
+//    case WM_CLOSE:
+//        DestroyWindow(hwnd);
+//        break;
+//    case WM_DESTROY:
+//        PostQuitMessage(0);
+//        break;
+//    default:
+//        return DefWindowProc(hwnd, message, wParam, lParam);
+//    }
+//    return 0;
+//}
+
+/* ----- * ----- < DirectX > ----- * ----- */
+
+/*
+< sin > : 시작 지점의 각도가 0도일때 0에서 시작하는 그래프
+    => 0 -> 1 -> 0 -> -1
+
+< cos > : 시작 지점의 각도가 0도일때 1에서 시작하는 그래프
+    => 1 -> 0 -> -1 -> 0
+
+< 좌표의 이동 예시 > : 50 ~ 100까지 그림을 이동 시킨다.
+    #. 기본적으로 sin은 -1에서 1을 반복한다.
+    #. 이동의 좌표 를 0으로 바꾼다면 -50을 하여 0 ~ 50이 된다.
+    #. sin은 1을 더하면 0 ~ 2까지가 된다.
+    #. 그러므로 *25를 sin에 해주면 -25 ~ 25가 된다.
+    #. 여기서 75를 sin에 추가로 더해 주면 50 ~ 100이 된다.( sin * 25 + 75 )
+
+< 중심 > : 반복되는 운동에서 가장 중요한 것은 중심이다.
+    #. 움직이는 폭을 곱해주고 ( *25 ) 50 ~ 75 ~ 100
+    #. 중심을 더해 준다.
+
+< GetMessage() >
+    #. 운영체제에서 메시지를 가져옴
+    #. 메시지가 없을 때는 함수 내부에서 대기
+
+< PeekMessage() >
+    #. 메시지가 있나 없나 살펴봄
+    #. 메시지가 있을 때는 가져오고 없으면 바로 끝
+*/
+
 #include <windows.h>
+
+#include <math.h>
+// #. 그림을 움직이기 위해 수학을 이용할 예정이다.
 
 #include <d2d1.h>
 #pragma comment(lib, "d2d1.lib")
-// #. 다이렉트X는 기본 시스템이 아닌 추가 확장 시스템이다.
-// #. 따라서 헤더와 라이브러리를 가져와야 한다.
 
 const wchar_t gClassName[] = L"MyWindowClass";
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+// #3. 그리기에 대한 전방 선언을 해준다.
+void OnPaint(HWND hwnd);
 
 // 1. DirectX Factory 생성
 // 2. RenderTarget 생성
 // 3. 그리기( Rendering )
 // 4. 리소스 해제
 
-// #. ID2D1( Interface Direct 2D Version 1 )
-// #. COM의 오브젝트들은 전부 클래스 내부에서 메모리를 관리한다.
-// #. COM내부에서 메모리를 가져와서 쓰는 형태가 많기 떄문에 모든 인터페이스는 포인터로 정의해야 한다.
 ID2D1Factory* gpD2DFactory{};
 ID2D1HwndRenderTarget* gpRenderTarget{};
 
-// #. 그리기 위한 도구를 다이렉트X 타입으로 만든다.
 ID2D1SolidColorBrush* gpBrush{};
 ID2D1RadialGradientBrush* gpRadialBrush{};
 
@@ -76,10 +315,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
     _In_ LPSTR lpCmdLine,
     _In_ int nShowCmd)
 {
-    // #1-1. 팩토리를 만드는 도우미 함수 CreateFactory
-    // #1-2. 팩토리 타입과 만들어진 팩토리에 대한 더블 포인터를 매개 변수로 전달한다.
-    // #1-3. 반환은 HRESULT타입으로 반환한다.
-    // #1-4. 이 도우미 함수를 통해 만들어진 Factory**를 gdD2DFactory포인터 변수로 받는다.
     HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &gpD2DFactory);
     if (FAILED(hr))
     {
@@ -123,10 +358,6 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         return 0;
     }
 
-    // #2-1. 팩토리를 만들어 놓았기 때문에 다이렉트X와 관련된 모든것은 팩토리를 통해서 만들면 된다.
-    // #2-2. 렌더타겟에 대한 속성( 렌더링 타입으로 CPU, GPU중 어떤 타입으로 할지, 픽셀 포맷이 어떤식인지,
-    //      => 화면 해상도 조절, 렌더타겟의 사용처, 다이렉트X 최소버전 설치 요구 사항 )
-    // #2-3. 두번째는 핸들과, 그릴 영역, V싱크를 할지 않할지
     GetClientRect(hwnd, &wr);
     hr = gpD2DFactory->CreateHwndRenderTarget(
         D2D1::RenderTargetProperties(),
@@ -139,11 +370,8 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         return 0;
     }
 
-    // #3-2. 그리기와 관련된 것은 전부 렌더 타깃이 한다.
     hr = gpRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkOrange), &gpBrush);
 
-    // #3-3. 그라데이션을 받은 변수를 만들고 색깔 포인트 지점을 지정해 준다.
-    //      => 임의로 두 개의 지점을 지정해 주고 그 지점의 색깔과 위치를 지정해 준다.
     ID2D1GradientStopCollection* pStops{};
     D2D1_GRADIENT_STOP gradientStops[2];
     gradientStops[0].color = D2D1::ColorF(D2D1::ColorF::Yellow);
@@ -151,15 +379,12 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
     gradientStops[1].color = D2D1::ColorF(D2D1::ColorF::Red);
     gradientStops[1].position = 1.0f;
 
-    // #3-4. 그라데이션을 만들어 준다.
-    //      => stop 배열을 주고, 배열의 개수를 주고, 만들어진 콜렉션을 전달해 준다.
     hr = gpRenderTarget->CreateGradientStopCollection(
         gradientStops,
         2,
         &pStops
     );
 
-    // #3-5. 만들어진 그라데이션을 통해 브러쉬를 만든다.
     hr = gpRenderTarget->CreateRadialGradientBrush(
         D2D1::RadialGradientBrushProperties(D2D1::Point2F(50, 150), D2D1::Point2F(0, 0), 50, 50),
         pStops,
@@ -175,14 +400,38 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
     ShowWindow(hwnd, nShowCmd);
     UpdateWindow(hwnd);
 
+    // #4. 무한 반복 while(true)
+    //      => 메시지 엿보기
+    //      => 있으면 가져와서 기존의 메시지 처리( PM_REMOVE )
+    //      => 없으면 그리기
     MSG msg;
-    while (GetMessage(&msg, NULL, 0, 0))
+    while (true)
     {
-        TranslateMessage(&msg);
-        DispatchMessage(&msg);
+        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+        {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+
+            if (msg.message == WM_QUIT)
+            {
+                break;
+            }
+        }
+        else
+        {
+            OnPaint(hwnd);
+        }
     }
 
-    // #4-1. 리소스 해제
+    //    while (GetMessage(&msg, NULL, 0, 0))
+    //    {
+    //// #2. 지속적으로 그림을 그릴 수 있도록 반복문에 넣어 준다.
+    ////      => 단 윈도우 이벤트가 발생할 때만 움직이게 된다.
+    //        OnPaint(hwnd);
+    //        TranslateMessage(&msg);
+    //        DispatchMessage(&msg);
+    //    }
+
     if (gpRadialBrush != nullptr)
     {
         gpRadialBrush->Release();
@@ -207,30 +456,35 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
     return static_cast<int>(msg.wParam);
 }
 
+// #1. 그림을 그리는 일을 하는 운영체제가 윈도우이기 때문에 원할 떄 그림을 그리기 어렵다.
+//      => OnPaint라는 기능이 계속 반복적으로 불려야만 한다.
 void OnPaint(HWND hwnd)
 {
     HDC hdc;
     PAINTSTRUCT ps;
     hdc = BeginPaint(hwnd, &ps);
 
-    // #3-1. 그리기 시작과 끝을 지정해 준다.
-    //      => Clear : 배경을 깨끗하게 지운다는 의미로 지정한 색으로 지운다.
-    //      => ColorF : 색을 float타입으로 지정한다.
     gpRenderTarget->BeginDraw();
     gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
-
-    // #3-6. 사각형을 그리고 색칠한다.
-    //      => 그릴 영역을 전달해 주고, 브러쉬를 지정해 준다.
     gpRenderTarget->FillRectangle(
         D2D1::RectF(0.0f, 0.0f, 100.0f, 100.0f),
         gpBrush
     );
 
-    // #3-7. 타원형을 그리고 색칠한다.
+    // #. 원형 그림에 투명도를 줄 수 있다.
+    //      => 일반 브러쉬에서 투명도를 조정한다.
+    // #. 원형 그림을 움직이기 위해 변수를 만들어서 sin을 넘겨주는 각도를 저장한다.
+    //      => sin에 그래프에서는 각도를 증가시켜 주어야 한다.
+    // #. 라디안 : 파이는 원의 반바퀴 180도이다.
+    //      => 그럼 15도는 파이 : 180 = x : 15 이고 (180/15)*3.14 이다.
+    static float fAngle = 0.0f;
+    gpBrush->SetOpacity(0.5f);
+    gpBrush->SetColor(D2D1::ColorF(D2D1::ColorF::LightYellow));
     gpRenderTarget->FillEllipse(
-        D2D1::Ellipse(D2D1::Point2F(50.0f, 150.0f), 50.0f, 50.0f),
-        gpRadialBrush
+        D2D1::Ellipse(D2D1::Point2F(sin(fAngle) * 25 + 75.0f, 150.0f), 50.0f, 50.0f),
+        gpBrush
     );
+    fAngle += 0.2f;
     gpRenderTarget->EndDraw();
 
     EndPaint(hwnd, &ps);
