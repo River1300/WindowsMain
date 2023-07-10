@@ -284,44 +284,458 @@
     #. 메시지가 있을 때는 가져오고 없으면 바로 끝
 */
 
+//#include <windows.h>
+//
+//#include <math.h>
+//// #. 그림을 움직이기 위해 수학을 이용할 예정이다.
+//
+//#include <d2d1.h>
+//#pragma comment(lib, "d2d1.lib")
+//
+//const wchar_t gClassName[] = L"MyWindowClass";
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+//
+//// #3. 그리기에 대한 전방 선언을 해준다.
+//void OnPaint(HWND hwnd);
+//
+//// 1. DirectX Factory 생성
+//// 2. RenderTarget 생성
+//// 3. 그리기( Rendering )
+//// 4. 리소스 해제
+//
+//ID2D1Factory* gpD2DFactory{};
+//ID2D1HwndRenderTarget* gpRenderTarget{};
+//
+//ID2D1SolidColorBrush* gpBrush{};
+//ID2D1RadialGradientBrush* gpRadialBrush{};
+//
+//int WINAPI WinMain(_In_ HINSTANCE hInstance,
+//    _In_opt_ HINSTANCE hPrevInstance,
+//    _In_ LPSTR lpCmdLine,
+//    _In_ int nShowCmd)
+//{
+//    HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &gpD2DFactory);
+//    if (FAILED(hr))
+//    {
+//        MessageBox(nullptr, L"Failed to create D2D Factory!!!", L"Error", MB_OK);
+//        return 0;
+//    }
+//
+//    HWND hwnd;
+//    WNDCLASSEX wc;
+//    ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//    wc.style = CS_HREDRAW | CS_VREDRAW;
+//    wc.lpszClassName = gClassName;
+//    wc.hInstance = hInstance;
+//    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//    wc.lpfnWndProc = WindowProc;
+//    wc.cbSize = sizeof(WNDCLASSEX);
+//    if (!RegisterClassEx(&wc))
+//    {
+//        MessageBox(nullptr, L"Failed to register window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+//        return 0;
+//    }
+//
+//    RECT wr = { 0, 0, 1024, 768 };
+//    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+//    hwnd = CreateWindowEx(NULL,
+//        gClassName,
+//        L"Direct2D",
+//        WS_OVERLAPPEDWINDOW,
+//        CW_USEDEFAULT,
+//        CW_USEDEFAULT,
+//        wr.right - wr.left,
+//        wr.bottom - wr.top,
+//        NULL,
+//        NULL,
+//        hInstance,
+//        NULL);
+//    if (hwnd == nullptr)
+//    {
+//        MessageBox(nullptr, L"Failed to create window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+//        return 0;
+//    }
+//
+//    GetClientRect(hwnd, &wr);
+//    hr = gpD2DFactory->CreateHwndRenderTarget(
+//        D2D1::RenderTargetProperties(),
+//        D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top)),
+//        &gpRenderTarget
+//    );
+//    if (FAILED(hr))
+//    {
+//        MessageBox(nullptr, L"Failed to create Render Target!", L"Error", MB_OK);
+//        return 0;
+//    }
+//
+//    hr = gpRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkOrange), &gpBrush);
+//
+//    ID2D1GradientStopCollection* pStops{};
+//    D2D1_GRADIENT_STOP gradientStops[2];
+//    gradientStops[0].color = D2D1::ColorF(D2D1::ColorF::Yellow);
+//    gradientStops[0].position = 0.0f;
+//    gradientStops[1].color = D2D1::ColorF(D2D1::ColorF::Red);
+//    gradientStops[1].position = 1.0f;
+//
+//    hr = gpRenderTarget->CreateGradientStopCollection(
+//        gradientStops,
+//        2,
+//        &pStops
+//    );
+//
+//    hr = gpRenderTarget->CreateRadialGradientBrush(
+//        D2D1::RadialGradientBrushProperties(D2D1::Point2F(50, 150), D2D1::Point2F(0, 0), 50, 50),
+//        pStops,
+//        &gpRadialBrush
+//    );
+//
+//    if (pStops != nullptr)
+//    {
+//        pStops->Release();
+//        pStops = nullptr;
+//    }
+//
+//    ShowWindow(hwnd, nShowCmd);
+//    UpdateWindow(hwnd);
+//
+//    // #4. 무한 반복 while(true)
+//    //      => 메시지 엿보기
+//    //      => 있으면 가져와서 기존의 메시지 처리( PM_REMOVE )
+//    //      => 없으면 그리기
+//    MSG msg;
+//    while (true)
+//    {
+//        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+//        {
+//            TranslateMessage(&msg);
+//            DispatchMessage(&msg);
+//
+//            if (msg.message == WM_QUIT)
+//            {
+//                break;
+//            }
+//        }
+//        else
+//        {
+//            OnPaint(hwnd);
+//        }
+//    }
+//
+//    //    while (GetMessage(&msg, NULL, 0, 0))
+//    //    {
+//    //// #2. 지속적으로 그림을 그릴 수 있도록 반복문에 넣어 준다.
+//    ////      => 단 윈도우 이벤트가 발생할 때만 움직이게 된다.
+//    //        OnPaint(hwnd);
+//    //        TranslateMessage(&msg);
+//    //        DispatchMessage(&msg);
+//    //    }
+//
+//    if (gpRadialBrush != nullptr)
+//    {
+//        gpRadialBrush->Release();
+//        gpRadialBrush = nullptr;
+//    }
+//    if (gpBrush != nullptr)
+//    {
+//        gpBrush->Release();
+//        gpBrush = nullptr;
+//    }
+//    if (gpRenderTarget != nullptr)
+//    {
+//        gpRenderTarget->Release();
+//        gpRenderTarget = nullptr;
+//    }
+//    if (gpD2DFactory != nullptr)
+//    {
+//        gpD2DFactory->Release();
+//        gpD2DFactory = nullptr;
+//    }
+//
+//    return static_cast<int>(msg.wParam);
+//}
+//
+//// #1. 그림을 그리는 일을 하는 운영체제가 윈도우이기 때문에 원할 떄 그림을 그리기 어렵다.
+////      => OnPaint라는 기능이 계속 반복적으로 불려야만 한다.
+//void OnPaint(HWND hwnd)
+//{
+//    HDC hdc;
+//    PAINTSTRUCT ps;
+//    hdc = BeginPaint(hwnd, &ps);
+//
+//    gpRenderTarget->BeginDraw();
+//    gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
+//    gpRenderTarget->FillRectangle(
+//        D2D1::RectF(0.0f, 0.0f, 100.0f, 100.0f),
+//        gpBrush
+//    );
+//
+//    // #. 원형 그림에 투명도를 줄 수 있다.
+//    //      => 일반 브러쉬에서 투명도를 조정한다.
+//    // #. 원형 그림을 움직이기 위해 변수를 만들어서 sin을 넘겨주는 각도를 저장한다.
+//    //      => sin에 그래프에서는 각도를 증가시켜 주어야 한다.
+//    // #. 라디안 : 파이는 원의 반바퀴 180도이다.
+//    //      => 그럼 15도는 [파이 : 180 = x : 15] 이고 (180/15)*3.14 이다.
+//    static float fAngle = 0.0f;
+//    gpBrush->SetOpacity(0.5f);
+//    gpBrush->SetColor(D2D1::ColorF(D2D1::ColorF::LightYellow));
+//    gpRenderTarget->FillEllipse(
+//        D2D1::Ellipse(D2D1::Point2F(sin(fAngle) * 25 + 75.0f, 150.0f), 50.0f, 50.0f),
+//        gpBrush
+//    );
+//    fAngle += 0.2f;
+//    gpRenderTarget->EndDraw();
+//
+//    EndPaint(hwnd, &ps);
+//}
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//    switch (message)
+//    {
+//    case WM_PAINT:
+//        OnPaint(hwnd);
+//        break;
+//    case WM_CLOSE:
+//        DestroyWindow(hwnd);
+//        break;
+//    case WM_DESTROY:
+//        PostQuitMessage(0);
+//        break;
+//    default:
+//        return DefWindowProc(hwnd, message, wParam, lParam);
+//    }
+//    return 0;
+//}
+
+/* ----- * ----- < DirectX > ----- * ----- */
+
+/*
+< Framework >
+    #. COM Object( C Base -> Pointer = COM 내부에서 동적 할당, 해제는 직접 해야 함
+
+< COM Smart Point > : ComPtr
+    => Microsoft::WRL::ComPtr<T> == std::shared_ptr
+*/
+
+//#include <windows.h>
+//#include <math.h>
+//#include <d2d1.h>
+//
+//// #. ComPtr을 사용하기 위한 헤더 파일
+//#include <wrl/client.h>
+//
+//#pragma comment(lib, "d2d1.lib")
+//
+//const wchar_t gClassName[] = L"MyWindowClass";
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+//void OnPaint(HWND hwnd);
+//
+//// #. 팩토리를 스마트 포인터로 바꿀 수 있다.
+//Microsoft::WRL::ComPtr<ID2D1Factory> gpD2DFactory{};
+//
+//ID2D1HwndRenderTarget* gpRenderTarget{};
+//ID2D1SolidColorBrush* gpBrush{};
+//ID2D1RadialGradientBrush* gpRadialBrush{};
+//
+//int WINAPI WinMain(_In_ HINSTANCE hInstance,
+//    _In_opt_ HINSTANCE hPrevInstance,
+//    _In_ LPSTR lpCmdLine,
+//    _In_ int nShowCmd)
+//{
+//    // #. gpD2DFactory는 ComPtr클래스 이기 때문에 포인터의 주소값을 명확히 넘겨 주어야 한다.
+//    //      => Get() : 포인터를 가져온다.
+//    //      => GetAddressOf() : 포인터의 주소를 가져온다.
+//    //      => ReleaseAndGetAddressOf() : 이미 인터페이스를 사용한 적이 있다면 해재한 뒤 다시 만든다.
+//    HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, gpD2DFactory.ReleaseAndGetAddressOf());
+//    if (FAILED(hr))
+//    {
+//        MessageBox(nullptr, L"Failed to create D2D Factory!!!", L"Error", MB_OK);
+//        return 0;
+//    }
+//
+//    HWND hwnd;
+//    WNDCLASSEX wc;
+//    ZeroMemory(&wc, sizeof(WNDCLASSEX));
+//    wc.style = CS_HREDRAW | CS_VREDRAW;
+//    wc.lpszClassName = gClassName;
+//    wc.hInstance = hInstance;
+//    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
+//    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+//    wc.lpfnWndProc = WindowProc;
+//    wc.cbSize = sizeof(WNDCLASSEX);
+//    if (!RegisterClassEx(&wc))
+//    {
+//        MessageBox(nullptr, L"Failed to register window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+//        return 0;
+//    }
+//
+//    RECT wr = { 0, 0, 1024, 768 };
+//    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
+//    hwnd = CreateWindowEx(NULL,
+//        gClassName,
+//        L"Direct2D",
+//        WS_OVERLAPPEDWINDOW,
+//        CW_USEDEFAULT,
+//        CW_USEDEFAULT,
+//        wr.right - wr.left,
+//        wr.bottom - wr.top,
+//        NULL,
+//        NULL,
+//        hInstance,
+//        NULL);
+//    if (hwnd == nullptr)
+//    {
+//        MessageBox(nullptr, L"Failed to create window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
+//        return 0;
+//    }
+//
+//    GetClientRect(hwnd, &wr);
+//    hr = gpD2DFactory->CreateHwndRenderTarget(
+//        D2D1::RenderTargetProperties(),
+//        D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top)),
+//        &gpRenderTarget
+//    );
+//    if (FAILED(hr))
+//    {
+//        MessageBox(nullptr, L"Failed to create Render Target!", L"Error", MB_OK);
+//        return 0;
+//    }
+//
+//    hr = gpRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkOrange), &gpBrush);
+//
+//    ID2D1GradientStopCollection* pStops{};
+//    D2D1_GRADIENT_STOP gradientStops[2];
+//    gradientStops[0].color = D2D1::ColorF(D2D1::ColorF::Yellow);
+//    gradientStops[0].position = 0.0f;
+//    gradientStops[1].color = D2D1::ColorF(D2D1::ColorF::Red);
+//    gradientStops[1].position = 1.0f;
+//
+//    hr = gpRenderTarget->CreateGradientStopCollection(
+//        gradientStops,
+//        2,
+//        &pStops
+//    );
+//
+//    hr = gpRenderTarget->CreateRadialGradientBrush(
+//        D2D1::RadialGradientBrushProperties(D2D1::Point2F(50, 150), D2D1::Point2F(0, 0), 50, 50),
+//        pStops,
+//        &gpRadialBrush
+//    );
+//
+//    if (pStops != nullptr)
+//    {
+//        pStops->Release();
+//        pStops = nullptr;
+//    }
+//
+//    ShowWindow(hwnd, nShowCmd);
+//    UpdateWindow(hwnd);
+//
+//    MSG msg;
+//    while (true)
+//    {
+//        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
+//        {
+//            TranslateMessage(&msg);
+//            DispatchMessage(&msg);
+//
+//            if (msg.message == WM_QUIT)
+//            {
+//                break;
+//            }
+//        }
+//        else
+//        {
+//            OnPaint(hwnd);
+//        }
+//    }
+//
+//
+//    if (gpRadialBrush != nullptr)
+//    {
+//        gpRadialBrush->Release();
+//        gpRadialBrush = nullptr;
+//    }
+//    if (gpBrush != nullptr)
+//    {
+//        gpBrush->Release();
+//        gpBrush = nullptr;
+//    }
+//    if (gpRenderTarget != nullptr)
+//    {
+//        gpRenderTarget->Release();
+//        gpRenderTarget = nullptr;
+//    }
+//
+//
+//    return static_cast<int>(msg.wParam);
+//}
+//
+//void OnPaint(HWND hwnd)
+//{
+//    HDC hdc;
+//    PAINTSTRUCT ps;
+//    hdc = BeginPaint(hwnd, &ps);
+//
+//    gpRenderTarget->BeginDraw();
+//    gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
+//    gpRenderTarget->FillRectangle(
+//        D2D1::RectF(0.0f, 0.0f, 100.0f, 100.0f),
+//        gpBrush
+//    );
+//
+//    static float fAngle = 0.0f;
+//    gpBrush->SetOpacity(0.5f);
+//    gpBrush->SetColor(D2D1::ColorF(D2D1::ColorF::LightYellow));
+//    gpRenderTarget->FillEllipse(
+//        D2D1::Ellipse(D2D1::Point2F(sin(fAngle) * 25 + 75.0f, 150.0f), 50.0f, 50.0f),
+//        gpBrush
+//    );
+//    fAngle += 0.2f;
+//    gpRenderTarget->EndDraw();
+//
+//    EndPaint(hwnd, &ps);
+//}
+//
+//LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
+//{
+//    switch (message)
+//    {
+//    case WM_PAINT:
+//        OnPaint(hwnd);
+//        break;
+//    case WM_CLOSE:
+//        DestroyWindow(hwnd);
+//        break;
+//    case WM_DESTROY:
+//        PostQuitMessage(0);
+//        break;
+//    default:
+//        return DefWindowProc(hwnd, message, wParam, lParam);
+//    }
+//    return 0;
+//}
+
+/* ----- * ----- < DirectX Framework > ----- * ----- */
+
 #include <windows.h>
-
-#include <math.h>
-// #. 그림을 움직이기 위해 수학을 이용할 예정이다.
-
-#include <d2d1.h>
-#pragma comment(lib, "d2d1.lib")
+#include "D2DFramework.h"
 
 const wchar_t gClassName[] = L"MyWindowClass";
-
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-// #3. 그리기에 대한 전방 선언을 해준다.
-void OnPaint(HWND hwnd);
-
-// 1. DirectX Factory 생성
-// 2. RenderTarget 생성
-// 3. 그리기( Rendering )
-// 4. 리소스 해제
-
-ID2D1Factory* gpD2DFactory{};
-ID2D1HwndRenderTarget* gpRenderTarget{};
-
-ID2D1SolidColorBrush* gpBrush{};
-ID2D1RadialGradientBrush* gpRadialBrush{};
+// #5. D2DFramework 클래스의 인스턴스를 만든다.
+//      => 이 인스턴스를 통해서 초기화, 해제, 그리기를 실행할 수 있다.
+D2DFramework myFramework;
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPSTR lpCmdLine,
     _In_ int nShowCmd)
 {
-    HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, &gpD2DFactory);
-    if (FAILED(hr))
-    {
-        MessageBox(nullptr, L"Failed to create D2D Factory!!!", L"Error", MB_OK);
-        return 0;
-    }
-
     HWND hwnd;
     WNDCLASSEX wc;
     ZeroMemory(&wc, sizeof(WNDCLASSEX));
@@ -358,52 +772,13 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         return 0;
     }
 
-    GetClientRect(hwnd, &wr);
-    hr = gpD2DFactory->CreateHwndRenderTarget(
-        D2D1::RenderTargetProperties(),
-        D2D1::HwndRenderTargetProperties(hwnd, D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top)),
-        &gpRenderTarget
-    );
-    if (FAILED(hr))
-    {
-        MessageBox(nullptr, L"Failed to create Render Target!", L"Error", MB_OK);
-        return 0;
-    }
-
-    hr = gpRenderTarget->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::DarkOrange), &gpBrush);
-
-    ID2D1GradientStopCollection* pStops{};
-    D2D1_GRADIENT_STOP gradientStops[2];
-    gradientStops[0].color = D2D1::ColorF(D2D1::ColorF::Yellow);
-    gradientStops[0].position = 0.0f;
-    gradientStops[1].color = D2D1::ColorF(D2D1::ColorF::Red);
-    gradientStops[1].position = 1.0f;
-
-    hr = gpRenderTarget->CreateGradientStopCollection(
-        gradientStops,
-        2,
-        &pStops
-    );
-
-    hr = gpRenderTarget->CreateRadialGradientBrush(
-        D2D1::RadialGradientBrushProperties(D2D1::Point2F(50, 150), D2D1::Point2F(0, 0), 50, 50),
-        pStops,
-        &gpRadialBrush
-    );
-
-    if (pStops != nullptr)
-    {
-        pStops->Release();
-        pStops = nullptr;
-    }
+    // #5-1. Framework의 초기화를 진행한다.
+    //      => 윈도우를 만들고 화면에 보여주기 전에 초기화를 진행한다.
+    myFramework.Init(hwnd);
 
     ShowWindow(hwnd, nShowCmd);
     UpdateWindow(hwnd);
 
-    // #4. 무한 반복 while(true)
-    //      => 메시지 엿보기
-    //      => 있으면 가져와서 기존의 메시지 처리( PM_REMOVE )
-    //      => 없으면 그리기
     MSG msg;
     while (true)
     {
@@ -419,84 +794,23 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         }
         else
         {
-            OnPaint(hwnd);
+            // #5-2. RenderTarget을 만들엇기 때문에 OnPaint의 PAINTSTRUCT가 필요 없다.
+            //      => 다이렉트X는 RenderTarget에 직접 그리기 때문에 윈도우가 보내는 신호와는 상관없다.
+            myFramework.Render();
         }
     }
 
-    //    while (GetMessage(&msg, NULL, 0, 0))
-    //    {
-    //// #2. 지속적으로 그림을 그릴 수 있도록 반복문에 넣어 준다.
-    ////      => 단 윈도우 이벤트가 발생할 때만 움직이게 된다.
-    //        OnPaint(hwnd);
-    //        TranslateMessage(&msg);
-    //        DispatchMessage(&msg);
-    //    }
-
-    if (gpRadialBrush != nullptr)
-    {
-        gpRadialBrush->Release();
-        gpRadialBrush = nullptr;
-    }
-    if (gpBrush != nullptr)
-    {
-        gpBrush->Release();
-        gpBrush = nullptr;
-    }
-    if (gpRenderTarget != nullptr)
-    {
-        gpRenderTarget->Release();
-        gpRenderTarget = nullptr;
-    }
-    if (gpD2DFactory != nullptr)
-    {
-        gpD2DFactory->Release();
-        gpD2DFactory = nullptr;
-    }
+    // #5-3. while문 밖으로 나온다는 뜻은 앱이 종료된다는 뜻이다.
+    //      => 할당한 메모리를 명시적으로 해제해 준다.
+    myFramework.Release();
 
     return static_cast<int>(msg.wParam);
-}
-
-// #1. 그림을 그리는 일을 하는 운영체제가 윈도우이기 때문에 원할 떄 그림을 그리기 어렵다.
-//      => OnPaint라는 기능이 계속 반복적으로 불려야만 한다.
-void OnPaint(HWND hwnd)
-{
-    HDC hdc;
-    PAINTSTRUCT ps;
-    hdc = BeginPaint(hwnd, &ps);
-
-    gpRenderTarget->BeginDraw();
-    gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
-    gpRenderTarget->FillRectangle(
-        D2D1::RectF(0.0f, 0.0f, 100.0f, 100.0f),
-        gpBrush
-    );
-
-    // #. 원형 그림에 투명도를 줄 수 있다.
-    //      => 일반 브러쉬에서 투명도를 조정한다.
-    // #. 원형 그림을 움직이기 위해 변수를 만들어서 sin을 넘겨주는 각도를 저장한다.
-    //      => sin에 그래프에서는 각도를 증가시켜 주어야 한다.
-    // #. 라디안 : 파이는 원의 반바퀴 180도이다.
-    //      => 그럼 15도는 파이 : 180 = x : 15 이고 (180/15)*3.14 이다.
-    static float fAngle = 0.0f;
-    gpBrush->SetOpacity(0.5f);
-    gpBrush->SetColor(D2D1::ColorF(D2D1::ColorF::LightYellow));
-    gpRenderTarget->FillEllipse(
-        D2D1::Ellipse(D2D1::Point2F(sin(fAngle) * 25 + 75.0f, 150.0f), 50.0f, 50.0f),
-        gpBrush
-    );
-    fAngle += 0.2f;
-    gpRenderTarget->EndDraw();
-
-    EndPaint(hwnd, &ps);
 }
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
     {
-    case WM_PAINT:
-        OnPaint(hwnd);
-        break;
     case WM_CLOSE:
         DestroyWindow(hwnd);
         break;
