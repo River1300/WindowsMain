@@ -726,9 +726,6 @@
 
 const wchar_t gClassName[] = L"MyWindowClass";
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-
-// #5. D2DFramework 클래스의 인스턴스를 만든다.
-//      => 이 인스턴스를 통해서 초기화, 해제, 그리기를 실행할 수 있다.
 D2DFramework myFramework;
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance,
@@ -772,9 +769,22 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         return 0;
     }
 
-    // #5-1. Framework의 초기화를 진행한다.
-    //      => 윈도우를 만들고 화면에 보여주기 전에 초기화를 진행한다.
-    myFramework.Init(hwnd);
+    try         // #. 기능 수행
+    {
+        myFramework.Init(hwnd);
+    }
+    catch (const com_exception& e)      // #. 예외 발생
+    {
+        // #8. com_exception으로 생성된 예외 사항들을 출력한다.
+        wchar_t wstr[128];
+        size_t len;
+        mbstowcs_s(&len, wstr, e.what(), 128);
+        MessageBox(nullptr, wstr, L"Error", MB_OK);
+        // #. MBS : MultiByte String
+        // #. To
+        // #. WCS : Wide Character String
+        // #. _s : safe( buffer overrun )
+    }
 
     ShowWindow(hwnd, nShowCmd);
     UpdateWindow(hwnd);
@@ -794,14 +804,9 @@ int WINAPI WinMain(_In_ HINSTANCE hInstance,
         }
         else
         {
-            // #5-2. RenderTarget을 만들엇기 때문에 OnPaint의 PAINTSTRUCT가 필요 없다.
-            //      => 다이렉트X는 RenderTarget에 직접 그리기 때문에 윈도우가 보내는 신호와는 상관없다.
             myFramework.Render();
         }
     }
-
-    // #5-3. while문 밖으로 나온다는 뜻은 앱이 종료된다는 뜻이다.
-    //      => 할당한 메모리를 명시적으로 해제해 준다.
     myFramework.Release();
 
     return static_cast<int>(msg.wParam);
