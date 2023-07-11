@@ -724,106 +724,33 @@
 #include <windows.h>
 #include "D2DFramework.h"
 
-const wchar_t gClassName[] = L"MyWindowClass";
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
-D2DFramework myFramework;
-
 int WINAPI WinMain(_In_ HINSTANCE hInstance,
     _In_opt_ HINSTANCE hPrevInstance,
     _In_ LPSTR lpCmdLine,
     _In_ int nShowCmd)
 {
-    HWND hwnd;
-    WNDCLASSEX wc;
-    ZeroMemory(&wc, sizeof(WNDCLASSEX));
-    wc.style = CS_HREDRAW | CS_VREDRAW;
-    wc.lpszClassName = gClassName;
-    wc.hInstance = hInstance;
-    wc.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-    wc.lpfnWndProc = WindowProc;
-    wc.cbSize = sizeof(WNDCLASSEX);
-    if (!RegisterClassEx(&wc))
-    {
-        MessageBox(nullptr, L"Failed to register window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
-        return 0;
-    }
+    int ret{};
 
-    RECT wr = { 0, 0, 1024, 768 };
-    AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
-    hwnd = CreateWindowEx(NULL,
-        gClassName,
-        L"Direct2D",
-        WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT,
-        CW_USEDEFAULT,
-        wr.right - wr.left,
-        wr.bottom - wr.top,
-        NULL,
-        NULL,
-        hInstance,
-        NULL);
-    if (hwnd == nullptr)
+    try
     {
-        MessageBox(nullptr, L"Failed to create window class!", L"Error", MB_ICONEXCLAMATION | MB_OK);
-        return 0;
-    }
+        D2DFramework myFramework;
 
-    try         // #. 기능 수행
-    {
-        myFramework.Init(hwnd);
+        HRESULT hr;
+        hr = myFramework.Initialize(hInstance);
+
+        if (SUCCEEDED(hr))
+        {
+            ret = myFramework.GameLoop();
+            myFramework.Release();
+        }
     }
-    catch (const com_exception& e)      // #. 예외 발생
+    catch (const com_exception& e)
     {
-        // #8. com_exception으로 생성된 예외 사항들을 출력한다.
         wchar_t wstr[128];
         size_t len;
         mbstowcs_s(&len, wstr, e.what(), 128);
         MessageBox(nullptr, wstr, L"Error", MB_OK);
-        // #. MBS : MultiByte String
-        // #. To
-        // #. WCS : Wide Character String
-        // #. _s : safe( buffer overrun )
     }
 
-    ShowWindow(hwnd, nShowCmd);
-    UpdateWindow(hwnd);
-
-    MSG msg;
-    while (true)
-    {
-        if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-
-            if (msg.message == WM_QUIT)
-            {
-                break;
-            }
-        }
-        else
-        {
-            myFramework.Render();
-        }
-    }
-    myFramework.Release();
-
-    return static_cast<int>(msg.wParam);
-}
-
-LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_CLOSE:
-        DestroyWindow(hwnd);
-        break;
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        break;
-    default:
-        return DefWindowProc(hwnd, message, wParam, lParam);
-    }
-    return 0;
+    return static_cast<int>(ret);
 }
