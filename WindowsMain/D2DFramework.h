@@ -72,6 +72,7 @@
 //	// #. 때문에 인스턴스를 포인터로 만들어 주어야 한다.
 //};
 
+#pragma once
 #include <d2d1.h>
 #include <wrl/client.h>
 #include <stdio.h>
@@ -122,6 +123,8 @@ protected:
 	// #. Direct2D 기능 : 생성( Factory, RenderTarget )
 	HRESULT InitWindow(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height);
 	HRESULT InitD2D();
+
+	virtual HRESULT CreateDeviceResources();
 
 public:
 	// #. Window 기능 : 메시지 루프

@@ -229,9 +229,18 @@ HRESULT D2DFramework::InitD2D()
 
     ThrowIfFailed(hr);
 
+    hr = CreateDeviceResources();
+
+    return hr;
+}
+
+
+HRESULT D2DFramework::CreateDeviceResources()
+{
+    // #. 디바이스 종속 리소스를 만드는 기능
     RECT wr;
     GetClientRect(mHwnd, &wr);
-    hr = mspD2DFactory->CreateHwndRenderTarget(
+    HRESULT hr = mspD2DFactory->CreateHwndRenderTarget(
         D2D1::RenderTargetProperties(),
         D2D1::HwndRenderTargetProperties(mHwnd, D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top)),
         &mspRenderTarget
@@ -239,7 +248,7 @@ HRESULT D2DFramework::InitD2D()
 
     ThrowIfFailed(hr);
 
-    return S_OK;
+    return hr;
 }
 
 
@@ -280,7 +289,15 @@ void D2DFramework::Render()
     mspRenderTarget->BeginDraw();
     mspRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
 
-    mspRenderTarget->EndDraw();
+    // #. 그리기 장치가 손상되었는지 확인한다.
+    //      => 그림 파일을 불러서 비디오 메모리에 올린다.
+    //      => 문제가 발생하여 장치 손실이 발생하면 그림 파일을 다시 불러주어야 한다.
+    //      => 즉 전부 다시 만들어야 한다.
+    HRESULT hr = mspRenderTarget->EndDraw();
+    if (hr == D2DERR_RECREATE_TARGET)
+    {
+        CreateDeviceResources();
+    }
 }
 
 
@@ -303,6 +320,7 @@ int D2DFramework::GameLoop()
         }
         else
         {
+            // #. 메세지는 이벤트가 발생할 때만 실행되지만 Render는 계속해서 실행된다.
             Render();
         }
     }

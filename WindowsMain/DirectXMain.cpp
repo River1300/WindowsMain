@@ -757,36 +757,106 @@
 
 /* ----- * ----- < WindowFramework > ----- * ----- */
 
+//#include <windows.h>
+//#include "D2DFramework.h"
+//
+//int WINAPI WinMain(_In_ HINSTANCE hInstance,
+//    _In_opt_ HINSTANCE hPrevInstance,
+//    _In_ LPSTR lpCmdLine,
+//    _In_ int nShowCmd)
+//{
+//    int ret{};
+//
+//    try
+//    {
+//        D2DFramework myFramework;
+//
+//        HRESULT hr;
+//        hr = myFramework.Initialize(hInstance);
+//
+//        if (SUCCEEDED(hr))
+//        {
+//            ret = myFramework.GameLoop();
+//            myFramework.Release();
+//        }
+//    }
+//    catch (const com_exception& e)
+//    {
+//        wchar_t wstr[128];
+//        size_t len;
+//        mbstowcs_s(&len, wstr, e.what(), 128);
+//        MessageBox(nullptr, wstr, L"Error", MB_OK);
+//    }
+//
+//    return static_cast<int>(ret);
+//}
+
+/* ----- * ----- < 그래픽 카드 > ----- * ----- */
+
+/*
+< 그래픽카드의 구성 요소 >
+    #. < GPU( Graphic Processing Unit ) > : '그래픽 연산 전용 CPU'라고 할 수 있다.
+        #. CPU보다 빠른 소수점 연산 처리
+        #. 3D오브젝트를 화면의 픽셀로 변환하는 파이프라인( 셰이더 )
+
+    #. < V-RAM( Video Random Access Memory ) > : 그래픽에 사용되는 내용을 저장하는 전용 메모리이다.
+        #. 화면에 그릴 내용을 메모리( Frame Buffer )에 들고 있는 것
+            => Frame Buffer : Front Buffer/Back Buffer라는 더블 버퍼링을 사용한다.
+        #. 이미지 파일을 로딩해서 저장
+        #. 3D오브젝트의 점( Vertex )를 저장
+
+    #. < 출력( Output ) > : 모니터와 연결하는 인터페이스이다.
+*/
+
+/* ----- * ----- < 가상 그래픽 카드 > ----- * ----- */
+
+/*
+< 가상 그래픽 카드 구성 >
+    #. 가상의 비디오 카드 FrameBuffer( 1024 x 768 BITMAP )
+    #. 화면 정보를 담고 있는 메모리 BackBuffer( 1024 x 768 BITMAP )
+
+< 그림을 그리는 방식 >
+    #. BackBuffer -> FrameBuffer : BackBuffer에 그려진 그림을 FrameBuffer로 복사한다.
+    #. 가상 그래픽 카드의 FrameBuffer를 모니터에 그린다.
+*/
+
 #include <windows.h>
-#include "D2DFramework.h"
+#include "VirtualGraphics.h"
 
 int WINAPI WinMain(_In_ HINSTANCE hInstance,
-    _In_opt_ HINSTANCE hPrevInstance,
-    _In_ LPSTR lpCmdLine,
-    _In_ int nShowCmd)
+	_In_opt_ HINSTANCE hPrevInstance,
+	_In_ LPSTR lpCmdLine,
+	_In_ int nShowCmd)
 {
-    int ret{};
+	// #6. WinMain작성
+	int ret{};
 
-    try
-    {
-        D2DFramework myFramework;
+	try {
+		VirtualGraphics myFramework;
 
-        HRESULT hr;
-        hr = myFramework.Initialize(hInstance);
+		if (SUCCEEDED(myFramework.Initialize(hInstance)))
+		{
+			// #6-1. 클래스의 초기화를 성공했다면 계속해서 GameLoop안에서 돈다.
+			ret = myFramework.GameLoop();
+		}
+	}
+	catch (const com_exception& e) {
+		static wchar_t wstr[64]{};
+		size_t len;
 
-        if (SUCCEEDED(hr))
-        {
-            ret = myFramework.GameLoop();
-            myFramework.Release();
-        }
-    }
-    catch (const com_exception& e)
-    {
-        wchar_t wstr[128];
-        size_t len;
-        mbstowcs_s(&len, wstr, e.what(), 128);
-        MessageBox(nullptr, wstr, L"Error", MB_OK);
-    }
-
-    return static_cast<int>(ret);
+		// #6-2. 멀티 바이트 스트링을 와이드 스트링으로 바꾸어서 버그 메시지를 출력해 준다.
+		mbstowcs_s(&len, wstr, e.what(), 64);
+		OutputDebugString(wstr);
+	}
+	return ret;
 }
+
+/* ----- * ----- < 비트맵( BITMAP ) > ----- * ----- */
+
+/*
+< 비트맵 > : Bit + Map의 약자로 비트로 구성된 맵이라는 의미다.
+    #. 디지털 이미지를 저장하는 이미지 파일 포멧 중 하나이며 가장 기본적인 방식이다.
+    #. 모눈 종이에 픽셀을 찍어서 이미지를 만드는 방식
+
+< 벡터 그래픽 > : 모든 그리기를 수학 공식으로 만든다.
+*/
