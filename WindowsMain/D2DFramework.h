@@ -72,13 +72,16 @@
 //	// #. 때문에 인스턴스를 포인터로 만들어 주어야 한다.
 //};
 
-#pragma once
 #include <d2d1.h>
+// #. 그림 파일을 부르기 위해 WIC를 사용하는데, 이 WIC를 프레임워크에 넣을 예정이다.
+//		=> 앞으로 그리는 객체와 프레임워크를 분리 시킬 예정
+//		=> 개별적인 그리기는 ID2D1Bitmap* pBitmap으로 진행
+//		=> WIC를 위한 헤더파일
+#include <wincodec.h>
 #include <wrl/client.h>
 #include <stdio.h>
 #include <exception>
 
-// #. 예외 상황을 잡아줄 클래스
 class com_exception : public std::exception
 {
 private:
@@ -96,7 +99,6 @@ public:
 	}
 };
 
-// #. HRESULT로 반환받은 값에 문제가 있다면 클래스 생성자를 호출하여 예외를 던진다.
 inline void ThrowIfFailed(HRESULT hr)
 {
 	if (FAILED(hr))
@@ -113,22 +115,18 @@ private:
 protected:
 	HWND mHwnd;
 
-	// #. 생성된 Factory를 mspD2DFactory로 가리킨다.
-	// #. 생성된 HwndRenderTarget을 mspRenderTarget으로 가리킨다.
+	// #. WIC 공장 생성
+	Microsoft::WRL::ComPtr <IWICImagingFactory> mspWICFactory{};
 	Microsoft::WRL::ComPtr <ID2D1Factory> mspD2DFactory{};
 	Microsoft::WRL::ComPtr <ID2D1HwndRenderTarget> mspRenderTarget{};
 
 protected:
-	// #. Window 기능 : 윈도우 만들기
-	// #. Direct2D 기능 : 생성( Factory, RenderTarget )
 	HRESULT InitWindow(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height);
 	HRESULT InitD2D();
 
 	virtual HRESULT CreateDeviceResources();
 
 public:
-	// #. Window 기능 : 메시지 루프
-	// #. Direct2D 기능 : 그리기( Rendering )
 	virtual HRESULT Initialize(HINSTANCE hInstance, LPCWSTR title = L"Direct2D Example",
 		UINT width = 1024, UINT height = 768);
 	virtual void Release();
@@ -136,12 +134,11 @@ public:
 	virtual int GameLoop();
 	void ShowErrorMsg(LPCWSTR msg, HRESULT error, LPCWSTR title = L"ERROR");
 
-	// #. Window 기능 : 메시지 프로시져
-	//		=> 윈도우 API는 C언어로 만들어져 있고 클래스의 멤버 함수는 C++의 언어로 만들 수 있다.
-	//		=> 때문에( 인스턴스 때문에 ) 함수 포인터가 서로 호환되지 않는다.
-	//		=> 이 문제를 해결하기 위해 클래스 함수( static member function )로 WindowProc을 옮겨 왔다.
-	//				=> 이 때 또 다른 문제가 생겼는데, 클래스 함수는 멤버 함수에 접근할 수가 없다.( 인스턴스 때문에 )
-	//				=> SetWindowLongPtr을 통해서 인스턴스의 포인터를 백업하고
-	//				=> 사용할 때 GetWindowLongPtr로 인스턴스의 포인터를 복원하였다.
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+public:
+	// #. 그리는 객체가 필요한 정보 중 하나가 렌더타겟
+	//		=> 렌더타겟을 부르기 위한 게터를 만들어 둔다.
+	ID2D1HwndRenderTarget* GetRenderTarget() { return mspRenderTarget.Get(); }
+	IWICImagingFactory* GetWICFactory() { return mspWICFactory.Get(); }
 };

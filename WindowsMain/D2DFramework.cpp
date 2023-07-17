@@ -168,10 +168,8 @@
 #include "D2DFramework.h"
 
 #pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "WindowsCodecs.lib")
 
-
-// #. WindowClass + Window 생성
-//      => 생성된 윈도우를 가리키는 hwnd는 멤버 변수 mHwnd가 가리키게 한다.
 HRESULT D2DFramework::InitWindow(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height)
 {
     HWND hwnd;
@@ -220,11 +218,16 @@ HRESULT D2DFramework::InitWindow(HINSTANCE hInstance, LPCWSTR title, UINT width,
 }
 
 
-// #. Factory + RenderTarget 생성
-//      => 헤더 파일에 만들어 두었던 ComPtr멤버 변수로 생성된 메모리 공간을 가리킨다.
 HRESULT D2DFramework::InitD2D()
 {
-    HRESULT hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
+    HRESULT hr;
+        
+    hr = CoCreateInstance(CLSID_WICImagingFactory, nullptr, 
+        CLSCTX_INPROC_SERVER, 
+        IID_PPV_ARGS(mspWICFactory.GetAddressOf()));
+    ThrowIfFailed(hr);
+
+    hr = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED,
         mspD2DFactory.ReleaseAndGetAddressOf());
 
     ThrowIfFailed(hr);
@@ -237,7 +240,6 @@ HRESULT D2DFramework::InitD2D()
 
 HRESULT D2DFramework::CreateDeviceResources()
 {
-    // #. 디바이스 종속 리소스를 만드는 기능
     RECT wr;
     GetClientRect(mHwnd, &wr);
     HRESULT hr = mspD2DFactory->CreateHwndRenderTarget(
@@ -252,11 +254,12 @@ HRESULT D2DFramework::CreateDeviceResources()
 }
 
 
-// #. 윈도우와 다이렉트 생성을 담당하는 멤버 함수들을 호출하여 프레임 워크를 초기화 한다.
-//      => 초기화를 완료 후 윈도우를 그려준다.
 HRESULT D2DFramework::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height)
 {
     HRESULT hr;
+
+    hr = CoInitialize(nullptr);
+    ThrowIfFailed(hr);
 
     hr = InitWindow(hInstance, title, width, height);
     ThrowIfFailed(hr);
@@ -271,28 +274,21 @@ HRESULT D2DFramework::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width,
 }
 
 
-// #. Factory + RenderTarget 메모리 공간을 해제한다.
-//      => 멤버 변수로 만들때 ComPtr로 만들었기 때문에 메모리 공간을 COM에서 직접 관리한다.
-//      => 그래서 굳이 메모리 공간을 해제하지 않아도 COM이 알아서 해제해준다.
-//      => 다만 이 함수는 명시적으로 해제하였음을 알려주는 용도이다.
 void D2DFramework::Release()
 {
     mspRenderTarget.Reset();
     mspD2DFactory.Reset();
+    mspWICFactory.Reset();
+
+    CoUninitialize();
 }
 
 
-// #. 그리기
-//      => RenderTarget으로 지정한 그릴 영역에 그림을 그린다.
 void D2DFramework::Render()
 {
     mspRenderTarget->BeginDraw();
     mspRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
 
-    // #. 그리기 장치가 손상되었는지 확인한다.
-    //      => 그림 파일을 불러서 비디오 메모리에 올린다.
-    //      => 문제가 발생하여 장치 손실이 발생하면 그림 파일을 다시 불러주어야 한다.
-    //      => 즉 전부 다시 만들어야 한다.
     HRESULT hr = mspRenderTarget->EndDraw();
     if (hr == D2DERR_RECREATE_TARGET)
     {
@@ -301,8 +297,6 @@ void D2DFramework::Render()
 }
 
 
-// #. 메세지 이벤트
-//      => 앱이 종료될때 까지 무한 반복한다.
 int D2DFramework::GameLoop()
 {
     MSG msg;
@@ -320,7 +314,6 @@ int D2DFramework::GameLoop()
         }
         else
         {
-            // #. 메세지는 이벤트가 발생할 때만 실행되지만 Render는 계속해서 실행된다.
             Render();
         }
     }
@@ -329,8 +322,6 @@ int D2DFramework::GameLoop()
 }
 
 
-// #. 디버그 메세지 출력
-//      => 디버그 메세지 창에 에러 메세지를 출력한다.
 void D2DFramework::ShowErrorMsg(LPCWSTR msg, HRESULT error, LPCWSTR title)
 {
     std::wostringstream oss;
@@ -342,8 +333,6 @@ void D2DFramework::ShowErrorMsg(LPCWSTR msg, HRESULT error, LPCWSTR title)
 }
 
 
-// #. 윈도우 프로시져 실행
-//      => 윈도우 프로시져의 다른 메시지를 처리할 때 백업해둔 인스턴스 포인터를 활용할 수 있다.
 LRESULT D2DFramework::WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     auto pFramework = reinterpret_cast<D2DFramework*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
