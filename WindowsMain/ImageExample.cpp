@@ -2,62 +2,72 @@
 #include <vector>
 #include "ImageExample.h"
 
+#pragma comment( lib, "WindowsCodecs.lib" )	// 라이브러리 추가
+
 HRESULT ImageExample::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height)
 {
-	D2DFramework::Initialize(hInstance, title, width, height);	// 부모 클래스의 초기화 함수 호출
+	HRESULT hr;
 
-	LoadBMP(L"Data/32.bmp", mspBitmap.ReleaseAndGetAddressOf());	// 그림을 불러옴
+	hr = CoInitialize(nullptr);	// #. 컴포넌트 오브젝트를 초기화하기 위해 불러야 하는 함수
+	ThrowIfFailed(hr);
 
+	// #2. WIC 공장 만들기
+	hr = CoCreateInstance(
+		CLSID_WICImagingFactory, // GUID : Globally Unique ID
+		nullptr,
+		CLSCTX_INPROC_SERVER,
+		IID_PPV_ARGS(mspWICFactory.GetAddressOf())
+	);
+	ThrowIfFailed(hr);
+
+	D2DFramework::Initialize(hInstance, title, width, height);
+
+	//LoadBMP(L"Data/32.bmp", mspBitmap.ReleaseAndGetAddressOf());
+	// #1. WICImage를 사용하여 이미지 초기화
+	LoadWICImage(L"Data/32.bmp", mspBitmap.ReleaseAndGetAddressOf());
+	
 	return S_OK;
+}
+
+void ImageExample::Release()
+{
+	D2DFramework::Release();
+
+	mspBitmap.Reset();
+	mspWICFactory.Reset();
+
+	CoUninitialize();
 }
 
 
 void ImageExample::Render()
 {
-	mspRenderTarget->BeginDraw();	// 그리기 시작
+	mspRenderTarget->BeginDraw();
 
-	mspRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f)));	// 그리기 배경 색칠
-	mspRenderTarget->DrawBitmap(mspBitmap.Get());	// mspBitmap에 있는 그림을 화면에 그리기
+	mspRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f)));
+	mspRenderTarget->DrawBitmap(mspBitmap.Get());
 
-	mspRenderTarget->EndDraw();	// 그리기 끝
+	mspRenderTarget->EndDraw();
 }
 
 
 HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
 {
-	// #1-1. 파일을 읽어올 객체( file )을 만들고 binary스타일로 파일을 읽어 온다.
 	std::ifstream file;
 	file.open(filename, std::ios::binary);
 
-	// #2-1. POD형태의 구조체 객체 bmh를 만들고 통째로 파일 데이터를 읽어오고 즉시 구조체로 변환한다.
 	BITMAPFILEHEADER bmh;
 	file.read(reinterpret_cast<char*>(&bmh), sizeof(BITMAPFILEHEADER));
 
-	// #3-1. POD형태의 구조체 객체 bmi를 만들고 통째로 파일 데이터를 읽어오고 즉시 구조체로 변환한다.
 	BITMAPINFOHEADER bmi;
 	file.read(reinterpret_cast<char*>(&bmi), sizeof(BITMAPINFOHEADER));
 
-	// #4-1. 비트맵 헤더 객체의 멤버로 Offset만큼 건너 뛴다.
 	file.seekg(bmh.bfOffBits);
 
-	// #5-1. 픽셀을 읽어 오기 위해 메모리에 픽셀 데이터를 저장해야 한다.
-	//		=> 메모리 공간을 준비하고 준비된 공간에 biSizeImage까지 파일을 읽어온다.
 	std::vector<char> pixels(bmi.biSizeImage);
-	//file.read(&pixels[0], bmi.biSizeImage);
 
 	int pitch{ bmi.biWidth * (bmi.biBitCount / 8) };
 
-	// #7. 뒤집어진 그림파일을 거꾸로 읽어 와서 정상적인 그림으로 출력해준다.
-		//for (int y = bmi.biHeight - 1; y >= 0; y--)
-		//{
-		//	file.read(&pixels[y * pitch], pitch);
-		//}
-
-	// #8. 이미지의 배경색을 지우고 나머지만 출력해 준다.
-	//		=> 배경색( RGB : 30, 199, 250 )
-	//		=> 한 픽셀 씩 읽어서 -> 배경색과 비교
-	//		=> 배경색과 같으면 투명 - RGBA 0000
-	//		=> 배경색과 다르면 그대로 사용
 	int index{};
 	for (int y = bmi.biHeight - 1; y >= 0; y--)
 	{
@@ -84,7 +94,6 @@ HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
 
 	file.close();
 
-	// #6. 비트맵을 만들면서 그림의 원본을 가져온다.
 	HRESULT hr = mspRenderTarget->CreateBitmap(
 		D2D1::SizeU(bmi.biWidth, bmi.biHeight),
 		D2D1::BitmapProperties(
@@ -98,4 +107,54 @@ HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
 	(*ppBitmap)->CopyFromMemory(nullptr, &pixels[0], pitch);
 
 	return S_OK;
+}
+
+HRESULT ImageExample::LoadWICImage(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
+{
+	// 1. 디코더 생성
+	//		=> 특정한 이미지 파일에서 암호화된 그림을 꺼내온다.
+	Microsoft::WRL::ComPtr<IWICBitmapDecoder> bitmapDecoder;
+	HRESULT hr;
+
+	hr = mspWICFactory->CreateDecoderFromFilename(
+		filename,
+		nullptr,
+		GENERIC_READ,
+		WICDecodeMetadataCacheOnLoad,
+		bitmapDecoder.GetAddressOf());
+	ThrowIfFailed(hr);
+
+	// 2. 디코더에서 프레임(frame) 획득
+	//		=> 첫 번째 프레임 가져오기
+	Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+	hr = (bitmapDecoder->GetFrame(0, frame.GetAddressOf()));
+	ThrowIfFailed(hr);
+
+	// 3. 컨버터를 사용해서 데이터를 변환
+	//		=> 그린 그림이 ID2D1Bitmap에 맞게 픽셀 포멧을 변환해 준다.
+	Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+	ThrowIfFailed(mspWICFactory->CreateFormatConverter(converter.GetAddressOf()));
+
+	hr = converter->Initialize(
+		frame.Get(),
+		GUID_WICPixelFormat32bppPBGRA,
+		WICBitmapDitherTypeNone,
+		nullptr,
+		0, // Threshold : 임계점
+		WICBitmapPaletteTypeCustom
+	);
+	ThrowIfFailed(hr);
+
+	// 4. 변환된 데이터로 BITMAP 생성
+	hr = mspRenderTarget->CreateBitmapFromWicBitmap(
+		converter.Get(),
+		mspBitmap.ReleaseAndGetAddressOf()
+	);
+	ThrowIfFailed(hr);
+
+	return S_OK;
+	// #. PNG 파일을 사용한다고 가정 하면 WIC에서 필요한 것은 처음으로 decoder가 필요하다.
+	//		=> PNG 파일을 열 수 있도록 PNG 코덱을 사용하여 타입을 열어서 이미지화 한다.
+	//		=> decode : 코드풀이, 복호화
+	//		=> encode : 코드화, 암호화
 }
