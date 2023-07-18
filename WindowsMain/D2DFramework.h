@@ -79,33 +79,7 @@
 //		=> WIC를 위한 헤더파일
 #include <wincodec.h>
 #include <wrl/client.h>
-#include <stdio.h>
-#include <exception>
-
-class com_exception : public std::exception
-{
-private:
-	HRESULT result;
-
-public:
-	com_exception(HRESULT hr) : result(hr) {}
-
-	virtual const char* what() const override
-	{
-		static char str[64]{};
-		sprintf_s(str, "Failure with HRESULT of %08X", static_cast<unsigned int>(result));
-
-		return str;
-	}
-};
-
-inline void ThrowIfFailed(HRESULT hr)
-{
-	if (FAILED(hr))
-	{
-		throw com_exception(hr);
-	}
-}
+#include "ComException.h"
 
 class D2DFramework
 {
@@ -116,7 +90,7 @@ protected:
 	HWND mHwnd;
 
 	// #. WIC 공장 생성
-	Microsoft::WRL::ComPtr <IWICImagingFactory> mspWICFactory{};
+	//Microsoft::WRL::ComPtr <IWICImagingFactory> mspWICFactory{};
 	Microsoft::WRL::ComPtr <ID2D1Factory> mspD2DFactory{};
 	Microsoft::WRL::ComPtr <ID2D1HwndRenderTarget> mspRenderTarget{};
 
@@ -140,5 +114,5 @@ public:
 	// #. 그리는 객체가 필요한 정보 중 하나가 렌더타겟
 	//		=> 렌더타겟을 부르기 위한 게터를 만들어 둔다.
 	ID2D1HwndRenderTarget* GetRenderTarget() { return mspRenderTarget.Get(); }
-	IWICImagingFactory* GetWICFactory() { return mspWICFactory.Get(); }
+	//IWICImagingFactory* GetWICFactory() { return mspWICFactory.Get(); }
 };

@@ -7,7 +7,7 @@ protected:	// #. 그리기 위한 가장 기본 적인 객체이므로 상속을 통해 플레이어, 적�
 	// #. 생성자가 생성될 때 강제적으로 프레임워크를 전달하도록 한다.
 	D2DFramework* mpFramework;
 	// ID2D1Bitmap
-	Microsoft::WRL::ComPtr<ID2D1Bitmap> mspBitmap;
+	ID2D1Bitmap* mpBitmap;
 	
 	// 위치 x, y
 	// 투명도
@@ -27,6 +27,6 @@ public:
 	virtual void Draw();
 
 private:
-	HRESULT LoadWICImage(LPCWSTR filename);
+	//HRESULT LoadWICImage(LPCWSTR filename);
 	void Draw(float x, float y, float opacity = 1.0f);
 };
