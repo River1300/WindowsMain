@@ -115,4 +115,5 @@ public:
 	//		=> 렌더타겟을 부르기 위한 게터를 만들어 둔다.
 	ID2D1HwndRenderTarget* GetRenderTarget() { return mspRenderTarget.Get(); }
 	//IWICImagingFactory* GetWICFactory() { return mspWICFactory.Get(); }
+	HWND GetWindowHandle() { return mHwnd; }
 };

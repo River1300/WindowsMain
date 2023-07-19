@@ -26,9 +26,9 @@ public:
 	~BitmapManager() {}
 
 private:
-	ID2D1HwndRenderTarget* mpRenderTarget;
-	Microsoft::WRL::ComPtr<IWICImagingFactory> mspWICFactory;
-	std::map<std::wstring, Microsoft::WRL::ComPtr<ID2D1Bitmap>> mBitmapResources;
+	ID2D1HwndRenderTarget* mpRenderTarget{};
+	Microsoft::WRL::ComPtr<IWICImagingFactory> mspWICFactory{};
+	std::map<std::wstring, Microsoft::WRL::ComPtr<ID2D1Bitmap>> mBitmapResources{};
 
 private:
 	HRESULT LoadWICBitmap(std::wstring filename, ID2D1Bitmap** ppBitmap);

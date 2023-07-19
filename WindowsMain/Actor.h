@@ -29,4 +29,9 @@ public:
 private:
 	//HRESULT LoadWICImage(LPCWSTR filename);
 	void Draw(float x, float y, float opacity = 1.0f);
+
+public:
+	D2D_VECTOR_2F GetPosition() const { return D2D_VECTOR_2F{ mX,mY }; }
+	void SetPosition(D2D_VECTOR_2F& pos) { mX = pos.x; mY = pos.y; }
+	void SetPosition(float x, float y) { mX = x; mY = y; }
 };
