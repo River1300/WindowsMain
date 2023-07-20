@@ -25,9 +25,12 @@ class Bug : public Actor
 	float mRotation{};
 
 public:
+	bool mIsDelete;
+
+public:
 	Bug(D2DFramework* pFramework);
 
 	void Draw() override;
-
+	bool IsClicked(POINT& pt);
 };
 

@@ -17,5 +17,6 @@ public:
 		UINT width = 1024, UINT height = 768) override;
 	void Release() override;
 	void Render() override;
-};
 
+	void CheckBugs();
+};

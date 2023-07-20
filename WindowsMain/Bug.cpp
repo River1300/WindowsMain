@@ -14,6 +14,7 @@ Bug::Bug(D2DFramework* pFramework) : Actor(pFramework, L"Data/bug1_1.png")
 	mSteps = 0;*/
 	mSteps = 0;
 	mRotation = 0.0f;
+	mIsDelete = false;
 }
 
 void Bug::Draw()
@@ -94,4 +95,24 @@ void Bug::Draw()
 		rect,
 		mOpacity
 	);
+}
+
+bool Bug::IsClicked(POINT& pt)
+{
+	auto size{ mpBitmap->GetPixelSize() };
+
+	D2D1_RECT_F rect{
+		mX,mY,
+		static_cast<float>(mX + size.width),
+		static_cast<float>(mY + size.height)
+	};
+
+	if (pt.x >= rect.left && pt.x <= rect.right &&
+		pt.y >= rect.top && pt.y <= rect.bottom)
+	{
+		mIsDelete = true;
+		return true;
+	}
+
+	return false;
 }
