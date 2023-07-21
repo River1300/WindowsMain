@@ -1,14 +1,28 @@
 #include <Windows.h>
 #include <d2d1.h>
-#include <math.h>	// 삼각 함수를 사용하여 그림에 애니메이션을 줘 보자.
+#include <wrl/client.h>	// ComPtr을 사용하기 위한 헤더
+#include <math.h>
 #pragma comment(lib, "d2d1.lib")
 
+// #. 프레임 워크 : 뼈대, 체계를 뜻한다.
+//		=> 프로그래밍에서는 특정 운영체제, 특정 그래픽 라이브러리를 위한 응용프로그램 표준 구조를 구현한 클래스와 라이브러리를 애플리케이션 프레임워크라 부른다.
+// Library : 프로그램에서 자주 사용할 편리한 함수 및 기능들을 모아둔 모듈 (.h)(.lib)
+// Application Programming Interface : 앱 개발을 위해 주로 운영체제에서 필요한 기능들을 제공하는 인터페이스, 앱과 하드웨어를 연결해 주는 역할
+// Software Develoment Kit : API와 거의 같은 의미이지만 개발을 도와주는 다양한 도구를 제공
+// Framework : 위 도구들은 게임 개발을 도와주는 도우미로 실제 게임의 흐름에는 관여하지 않는다.
+//		=> 그래픽 라이브러리, 사운드 라이브러리 등과 같이 특정한 기능을 편리하게 만들 수 있게 도와줄 뿐이다.
+//		=> 하지만 프레임워크는 개념이 다르다. 이런 도구들을 모아서 다양한 앱을 만들 수 있도록 앱의 기본 흐름을 규정한다. 심지어 데이터에 사용할 파일 포멧 같은 경우도 프레임워크가 지정한 것을 사용해야만 한다.
+//		=> 그래픽, 사운드와 같은 복잡한 기능들은 라이브러리나 SDK의 도움을 받고, 기본적인 초기화 해제 작업을 미리 작업해 두면 그것이 프레임워크가 된다.
+
+// #. Microsoft::WRL::ComPtr
+//		=> COM오브젝트에 대한 스마트 포인터 기능을 추가
+//		=> std::shared_ptr과 같은 방식으로 내부에 참조 카운트를 가지고 있으며 여러곳에서 사용하다가 참조 카운트가 0이되면 해제되는 방식을 취하고 있다.
 const wchar_t gClassName[] = L"MyWindowClass";
 
 void OnPaint(HWND hwnd);
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
-ID2D1Factory* gpD2DFactory{};
+Microsoft::WRL::ComPtr<ID2D1Factory> mspD2DFactory{};	// ComPtr로 Factory를 선언
 ID2D1HwndRenderTarget* gpRenderTarget{};
 ID2D1SolidColorBrush* gpBrush{};
 ID2D1RadialGradientBrush* gpRadialBrush{};
@@ -20,8 +34,12 @@ int WINAPI WinMain(
 	_In_ int nShowCmd
 )
 {
+	// 초기화 및 해제
+	//		=> 일반적으로 COM객체는 Factory 또는 헬퍼 함수를 통해서 생성되고, 매개변수로 인터페이스에 대한 포인터의 주소(**)를 넘겨주는 형태이다.
+	//		=> ComPtr은 이런 특성을 GetAddressOf() 메서드로 제공한다.
+	//		=> 만약 ComPtr 오브젝트를 클래스 멤버로 사용하고 있고, 이미 초기화가 되어 있는지 명확하지 않으면 안전하게 ReleaseAndGetAddressOf() 메서드를 사용할 수 있다.
 	HRESULT hr = D2D1CreateFactory(
-		D2D1_FACTORY_TYPE_SINGLE_THREADED, &gpD2DFactory
+		D2D1_FACTORY_TYPE_SINGLE_THREADED, mspD2DFactory.ReleaseAndGetAddressOf()
 	);
 	if (FAILED(hr))
 	{
@@ -71,7 +89,7 @@ int WINAPI WinMain(
 	}
 
 	GetClientRect(hwnd, &wr);
-	hr = gpD2DFactory->CreateHwndRenderTarget(
+	hr = mspD2DFactory->CreateHwndRenderTarget(
 		D2D1::RenderTargetProperties(),
 		D2D1::HwndRenderTargetProperties(
 			hwnd,
@@ -123,13 +141,6 @@ int WINAPI WinMain(
 	ShowWindow(hwnd, nShowCmd);
 	UpdateWindow(hwnd);
 
-	// #. PeekMessage() : 메시지 큐에 메시지가 존재하면 가져오고 없으면 바로 반환한다.
-	//		=> 따라서 게임과 같이 빠른 처리가 필요하면 이 함수를 사용해야만 한다.
-	//		1. 일단 무한 반복
-	//		2. 메시지가 있나 살펴 본다.
-	//		3. 메시지가 있으면 윈도우 메시지를 처리한다.
-	//			=> 만약 윈도우를 종료하는 메시지라면 루프를 벗어난다.
-	//		4. 메시지가 없으면 게임 루틴을 호출한다.
 	MSG msg;
 	while (true)
 	{
@@ -173,11 +184,15 @@ int WINAPI WinMain(
 		gpRenderTarget = nullptr;
 	}
 
-	if (gpD2DFactory != nullptr)
-	{
-		gpD2DFactory->Release();
-		gpD2DFactory = nullptr;
-	}
+	//if (gpD2DFactory != nullptr)
+	//{
+	//	gpD2DFactory->Release();
+	//	gpD2DFactory = nullptr;
+	//}
+
+	// 해제는 자동으로 이주어 지지만 명시적으로 수행하고 싶을 때는 Reset()메서드를 사용한다.
+	mspD2DFactory.Reset();
+	mspD2DFactory = nullptr;
 
 	return static_cast<int>(msg.wParam);
 }
@@ -191,8 +206,6 @@ void OnPaint(HWND hwnd)
 	gpRenderTarget->BeginDraw();
 	gpRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
 
-	// #. 투명하게 그리기
-	//		=> 단색 브러시는 색상이나 투명도를 조절할 수 있다.
 	gpBrush->SetOpacity(1.0f);
 	gpBrush->SetColor(D2D1::ColorF(D2D1::ColorF::Aquamarine));
 	gpRenderTarget->FillRectangle(
@@ -206,15 +219,12 @@ void OnPaint(HWND hwnd)
 		gpBrush
 	);
 
-	// #. 그림에 애니메이션 주기
-	//		=> fAngle은 항상 증가해야 하며, 이전에 실행한 값을 가지고 있어야 하므로, 전역변수이거나 정적 변수여야 함
 	static float fAngle = 0.0f;
 	gpRenderTarget->FillEllipse(
 		D2D1::Ellipse(D2D1::Point2F(75.0f + sinf(fAngle) * 25, 150.0f), 50.0f, 50.0f),
 		gpRadialBrush
 	);
 	fAngle += 0.2f;
-	//		=> 위와 같이 실행 하였을 때 윈도우 화면 갱신 메시지 WM_PAINT 때문에 화면을 다시 불러와야 이동한다.
 
 	gpRenderTarget->EndDraw();
 	EndPaint(hwnd, &ps);
