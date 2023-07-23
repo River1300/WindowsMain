@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include "BitmapExample.h"
+#include "ImageExample.h"
 
 int WINAPI WinMain(
 	_In_ HINSTANCE hInstance,
@@ -12,7 +12,7 @@ int WINAPI WinMain(
 
 	try
 	{
-		BitmapExample myFramework;
+		ImageExample myFramework;
 
 		HRESULT hr;
 		hr = myFramework.Initialize(hInstance);
