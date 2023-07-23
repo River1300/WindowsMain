@@ -64,7 +64,6 @@ HRESULT D2DFramework::InitD2D()
 	return CreateDeviceResources();
 }
 
-// 기존 Direct2D 초기화 함수에서 렌더타겟만 분리해서 다시 생성할 수 있게 만든다.
 HRESULT D2DFramework::CreateDeviceResources()
 {
 	RECT wr;
@@ -114,7 +113,7 @@ void D2DFramework::Render()
 	mspRenderTarget->EndDraw();
 
 	hr = mspRenderTarget->EndDraw();
-	// 디바이스가 손상되었을 때 복구한다.
+
 	if (hr == D2DERR_RECREATE_TARGET) CreateDeviceResources();
 }
 
