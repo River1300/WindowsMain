@@ -48,17 +48,8 @@ HRESULT D2DFramework::InitWindow(HINSTANCE hInstance, LPCWSTR title, UINT width,
 		return E_FAIL;
 	}
 
-	// #. 메시지를 처리하다 보면 메시지 처리 루틴 내부에서 프레임워크 클래스 멤버함수를 호출할 경우가 있다.
-	//		=> 하지만 정적 함수일 경우에는 클래스에 접근할 수 없다. 인스턴스에 종속된 함수가 아니라 클래스에 속한 함수이기 때문에
-	//		=> 키보드나 마우스 메시지 처럼 게임 프레임워크에 넘겨줘야 하는 것들이 많기 때문에, 프레임워크가 필요
-	//		=> 윈도우를 생성하는 함수인 CreateWindow()함수에는 사용자가 임의의 데이터를 전달할 수 있는 매개변수가 있는데
-	//		=> 이 정보는 윈도우가 생성된 후 WM_CREATE 이벤트에서 가져올 수 있다.
-	//	#. 윈도우를 생성한 후 SetWindowLongPtr() 함수를 통해 윈도우의 사용자 지정 데이터 속성을 변경
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(this));
-	//	#. GELP_USERDATA 매개변수로 이 클래스에 대한 포인터를 넘겨줘서 메시지 프로시져에서 사용할 수 있도록 만들어 준다.
-
 	mHwnd = hwnd;
-
 	return S_OK;
 }
 
@@ -70,14 +61,20 @@ HRESULT D2DFramework::InitD2D()
 	);
 	ThrowIfFailed(hr);
 
+	return CreateDeviceResources();
+}
+
+// 기존 Direct2D 초기화 함수에서 렌더타겟만 분리해서 다시 생성할 수 있게 만든다.
+HRESULT D2DFramework::CreateDeviceResources()
+{
 	RECT wr;
 	GetClientRect(mHwnd, &wr);
-	hr = mspD2DFactory->CreateHwndRenderTarget(
+
+	D2D1_SIZE_U size = D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top);
+
+	HRESULT hr = mspD2DFactory->CreateHwndRenderTarget(
 		D2D1::RenderTargetProperties(),
-		D2D1::HwndRenderTargetProperties(
-			mHwnd,
-			D2D1::SizeU(wr.right - wr.left, wr.bottom - wr.top)
-		),
+		D2D1::HwndRenderTargetProperties(mHwnd, size),
 		mspRenderTarget.ReleaseAndGetAddressOf()
 	);
 	ThrowIfFailed(hr);
@@ -107,9 +104,18 @@ void D2DFramework::Release()
 
 void D2DFramework::Render()
 {
+	HRESULT hr;
+
 	mspRenderTarget->BeginDraw();
+
+	mspRenderTarget->SetTransform(D2D1::Matrix3x2F::Identity());
 	mspRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
+
 	mspRenderTarget->EndDraw();
+
+	hr = mspRenderTarget->EndDraw();
+	// 디바이스가 손상되었을 때 복구한다.
+	if (hr == D2DERR_RECREATE_TARGET) CreateDeviceResources();
 }
 
 int D2DFramework::GameLoop()
