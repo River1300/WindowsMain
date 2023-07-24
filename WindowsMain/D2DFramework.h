@@ -1,6 +1,9 @@
 #pragma once
 
+// #. WIC 의 공용 기능을 Framework에 올려놓는다.
+
 #include <d2d1.h>
+#include <wincodec.h>
 #include <wrl/client.h>
 #include <exception>
 #include <stdio.h>
@@ -35,6 +38,7 @@ class D2DFramework
 protected:
 	HWND mHwnd;
 
+	Microsoft::WRL::ComPtr<IWICImagingFactory> mspWICFactory{};
 	Microsoft::WRL::ComPtr<ID2D1Factory> mspD2DFactory{};
 	Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> mspRenderTarget{};
 
@@ -54,4 +58,9 @@ public:
 
 	void ShowErrorMsg(LPCWSTR msg, HRESULT error, LPCWSTR title);
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+
+public:
+	// 클래스 외부에서 사용할 수도 있으므로 Getter 생성
+	ID2D1HwndRenderTarget* GetRenderTarget() { return mspRenderTarget.Get(); }
+	IWICImagingFactory* GetWICFactory() { return mspWICFactory.Get(); }
 };
