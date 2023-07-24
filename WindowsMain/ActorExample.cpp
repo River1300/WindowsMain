@@ -1,27 +1,37 @@
-#include <windows.h>
-#include "BugBit.h"
+#include "ActorExample.h"
 
-int WINAPI WinMain(_In_ HINSTANCE hInstance,
-	_In_opt_ HINSTANCE hPrevInstance,
-	_In_ LPSTR lpCmdLine,
-	_In_ int nShowCmd)
+HRESULT ActorExample::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height)
 {
-	int ret{};
+	HRESULT hr = D2DFramework::Initialize(hInstance, title, width, height);
+	ThrowIfFailed(hr);
 
-	try {
-		BugBit myFramework;
+	// ADDED
+	mspBackground = std::make_unique<Actor>(this, L"Data/back1_1024.png", 0, 0);
+	mspBug = std::make_unique<Actor>(this, L"Data/bug1_1.png", 100, 100);
 
-		if (SUCCEEDED(myFramework.Initialize(hInstance)))
-		{
-			ret = myFramework.GameLoop();
-		}
-	}
-	catch (const com_exception& e) {
-		static wchar_t wstr[64]{};
-		size_t len;
+	return S_OK;
+}
 
-		mbstowcs_s(&len, wstr, e.what(), 64);
-		OutputDebugString(wstr);
-	}
-	return ret;
+void ActorExample::Release()
+{
+	mspBug.reset();
+	mspBackground.reset();
+
+	D2DFramework::Release();
+}
+
+void ActorExample::Render()
+{
+	HRESULT hr;
+
+	mspRenderTarget->BeginDraw();
+	mspRenderTarget->Clear(D2D1::ColorF(0.0f, 0.2f, 0.4f, 1.0f));
+
+	// ADDED
+	mspBackground->Draw();
+	mspBug->Draw();
+
+	hr = mspRenderTarget->EndDraw();
+
+	if (hr == D2DERR_RECREATE_TARGET) CreateDeviceResources();
 }
