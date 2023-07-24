@@ -2,11 +2,26 @@
 #include <vector>
 #include "ImageExample.h"
 
+#pragma comment( lib, "WindowsCodecs.lib" )
+
 HRESULT ImageExample::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height)
 {
+	HRESULT hr;
+
+	hr = CoInitialize(nullptr);	// COM 오브젝트를 사용하기 위해 시스템을 초기화
+	ThrowIfFailed(hr);
+
+	hr = ::CoCreateInstance(CLSID_WICImagingFactory,
+		nullptr,
+		CLSCTX_INPROC_SERVER,
+		IID_PPV_ARGS(mspWICFactory.GetAddressOf())
+	);
+	ThrowIfFailed(hr);
+
 	D2DFramework::Initialize(hInstance, title, width, height);
 
-	LoadBMP(L"Data/32.bmp", mspBitmap.ReleaseAndGetAddressOf());
+	//LoadBMP(L"Data/32.bmp", mspBitmap.ReleaseAndGetAddressOf());
+	LoadWICImage(L"Data/32.bmp", mspBitmap.ReleaseAndGetAddressOf());
 
 	return S_OK;
 }
@@ -19,6 +34,15 @@ void ImageExample::Render()
 	mspRenderTarget->DrawBitmap(mspBitmap.Get());
 
 	mspRenderTarget->EndDraw();
+}
+
+void ImageExample::Release()
+{
+	D2DFramework::Release();
+	// WIC Factory 해제
+	mspWICFactory.ReleaseAndGetAddressOf();
+	// COM 해제
+	CoUninitialize();
 }
 
 HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
@@ -36,7 +60,6 @@ HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
 
 	std::vector<char> pPixels(bmi.biSizeImage);
 	file.seekg(bmh.bfOffBits);
-	//file.read(&pPixels[0], bmi.biSizeImage); 뒤집어진 이미지를 pitch 단위로 읽어서 올바른 위치(역순)에 저장
 
 	int pitch = bmi.biWidth * (bmi.biBitCount / 8);
 	int index{};
@@ -64,11 +87,6 @@ HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
 
 	file.close();
 
-	// 모든 픽셀을 수동으로 읽어서 배경색과 같으면 투명하게 만들어 준다.
-	//		=> 한 바이트씩 전체 비트맵을 읽어 오는 코딩 작성
-	//		=> 읽어온 색상이 배경색과 같으면 RGBA를 모두 0으로 만든다.
-	//		=> LoadBMP()의 비트맵 생성에서 다음 속성을 변경해 준다.
-
 	HRESULT hr = mspRenderTarget->CreateBitmap(
 		D2D1::SizeU(bmi.biWidth, bmi.biHeight),
 		D2D1::BitmapProperties(
@@ -85,6 +103,49 @@ HRESULT ImageExample::LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
 		&pPixels[0],
 		pitch
 	);
+
+	return S_OK;
+}
+
+HRESULT ImageExample::LoadWICImage(LPCWSTR filename, ID2D1Bitmap** ppBitmap)
+{
+	Microsoft::WRL::ComPtr<IWICBitmapDecoder> bitmapDecoder;
+	HRESULT hr;
+
+	// 1. 디코더 생성
+	hr = mspWICFactory->CreateDecoderFromFilename(
+		filename,
+		nullptr,
+		GENERIC_READ,
+		WICDecodeMetadataCacheOnLoad,
+		bitmapDecoder.GetAddressOf()
+	);
+	ThrowIfFailed(hr);
+
+	// 2. 디코더에서 프레임 획득
+	Microsoft::WRL::ComPtr<IWICBitmapFrameDecode> frame;
+	ThrowIfFailed(bitmapDecoder->GetFrame(0, frame.GetAddressOf()));
+
+	// 3. 포멧 컨버터
+	Microsoft::WRL::ComPtr<IWICFormatConverter> converter;
+	ThrowIfFailed(mspWICFactory->CreateFormatConverter(converter.GetAddressOf()));
+
+	hr = converter->Initialize(
+		frame.Get(),
+		GUID_WICPixelFormat32bppPBGRA,
+		WICBitmapDitherTypeNone,
+		nullptr,
+		0,
+		WICBitmapPaletteTypeCustom
+	);
+	ThrowIfFailed(hr);
+
+	// 4. 변환된 데이터에서 비트맵 생성
+	hr = mspRenderTarget->CreateBitmapFromWicBitmap(
+		converter.Get(),
+		mspBitmap.ReleaseAndGetAddressOf()
+	);
+	ThrowIfFailed(hr);
 
 	return S_OK;
 }

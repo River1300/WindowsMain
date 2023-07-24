@@ -1,17 +1,14 @@
 #pragma once
 
+#include <wincodec.h>
 #include "D2DFramework.h"
 
-// #. BMP 파일 불러와서 그리기
-//	=> BMP 파일 열기
-//	=> BITMAPFILEHEADER 읽기
-//	=> BITMAPINFOHEADER 일기
-//	=> BITMAPFILEHEADER의 bfOffBits 만큼 건너 뛰기
-//	=> 픽셀 데이터 읽기
+// #. Windows Imaging Component
 
 class ImageExample : public D2DFramework
-{
-	Microsoft::WRL::ComPtr<ID2D1Bitmap> mspBitmap;	// BMP파일을 읽어올 ID2D1Bitmap 인터페이스
+{	// WIC역시 Factory 패턴이라 Factory를 위한 스마트 포인터를 멤버로 선언하고 개별적인 해제가 필요하므로 Release를 오버라이딩 한다.
+	Microsoft::WRL::ComPtr<IWICImagingFactory> mspWICFactory;
+	Microsoft::WRL::ComPtr<ID2D1Bitmap> mspBitmap;
 
 public:
 	virtual HRESULT Initialize(HINSTANCE hInstance,
@@ -22,5 +19,9 @@ public:
 	void Render() override;
 
 public:
+	void Release() override;
+
+public:
 	HRESULT LoadBMP(LPCWSTR filename, ID2D1Bitmap** ppBitmap);
+	HRESULT LoadWICImage(LPCWSTR filename, ID2D1Bitmap** ppBitmap);
 };
