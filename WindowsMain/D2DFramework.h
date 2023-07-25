@@ -1,35 +1,15 @@
 #pragma once
 
-// #. WIC 의 공용 기능을 Framework에 올려놓는다.
-
 #include <d2d1.h>
 #include <wincodec.h>
 #include <wrl/client.h>
-#include <exception>
-#include <stdio.h>
+#include "ComException.h"
 
-class com_exception : public std::exception
-{
-	HRESULT result;
+// #. 그리기에 필요한 작업
+//		Input( 파일 이름을 받아서 ) Output( ID2D1Bitmap 인터페이스 )
+//			=> 처음 로딩이라면 ID2D1Bitmap 인터페이스를 생성하고 아니라면 기존의 인터페이스를 반환
 
-public:
-	com_exception(HRESULT hr) : result(hr) {}
-
-	virtual const char* what() const override
-	{
-		static char str[64] = {};
-		sprintf_s(
-			str, "Failure with HRESULT of %08X",
-			static_cast<unsigned int>(result)
-		);
-		return str;
-	}
-};
-
-inline void ThrowIfFailed(HRESULT hr)
-{
-	if (FAILED(hr)) throw com_exception(hr);
-}
+// 3. 프레임워크에서 예외처리 기능을 분리한다.
 
 class D2DFramework
 {
@@ -60,7 +40,6 @@ public:
 	static LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 
 public:
-	// 클래스 외부에서 사용할 수도 있으므로 Getter 생성
 	ID2D1HwndRenderTarget* GetRenderTarget() { return mspRenderTarget.Get(); }
 	IWICImagingFactory* GetWICFactory() { return mspWICFactory.Get(); }
 };
