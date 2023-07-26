@@ -11,7 +11,6 @@ class D2DFramework
 
 protected:
 	HWND mHwnd;
-	// WIC Factory는 매니저로 분리
 	Microsoft::WRL::ComPtr<ID2D1Factory> mspD2DFactory{};
 	Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> mspRenderTarget{};
 
@@ -34,4 +33,6 @@ public:
 
 public:
 	ID2D1HwndRenderTarget* GetRenderTarget() { return mspRenderTarget.Get(); }
+	// Bug 클래스에서 그림을 그리기위해 윈도우 핸들을 받아온다.
+	HWND GetWindowHandle() { return mHwnd; }
 };

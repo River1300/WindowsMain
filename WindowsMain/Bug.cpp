@@ -1,32 +1,24 @@
 #include "Bug.h"
 
-// 현재 방향으로 5번 이동하고 임의로 방향 전환
-
-Bug::Bug(D2DFramework* pFramework) : Actor(pFramework, L"Data/bug1_1.png")
+Bug::Bug(D2DFramework* pFramework) :
+	Actor(pFramework, L"Data/bug1_1.png")
 {
 	RECT rct{};
 	GetClientRect(pFramework->GetWindowHandle(), &rct);
 
 	mX = static_cast<float>(rand() % (rct.right - rct.left));
 	mY = static_cast<float>(rand() % (rct.bottom - rct.top));
-
-	/*mDirection = Direction::UP;
-	mSteps = 0;*/
-	mSteps = 0;
-	mRotation = 0.0f;
-	mIsDelete = false;
 }
 
 void Bug::Draw()
 {
-	/*if (mSteps++ > 20)
+	if (mSteps++ > 5)
 	{
 		mSteps = 0;
-
 		int dir = static_cast<int>(mDirection);
 		int dir_count = static_cast<int>(Direction::COUNT);
-		dir += (rand() % 3 - 1);
-		dir = (dir + dir_count) % dir_count;
+		dir += (1 - rand() % 3);
+		dir = (dir + dir_count) % dir_count;	// 방향 값을 넘어가지 않도록 순환 연산
 
 		mDirection = static_cast<Direction>(dir);
 	}
@@ -63,56 +55,5 @@ void Bug::Draw()
 		break;
 	}
 
-	Actor::Draw();*/
-
-	auto size{ mpBitmap->GetPixelSize() };
-	D2D1_RECT_F rect{
-		0,0,
-		static_cast<float>(size.width),
-		static_cast<float>(size.height)
-	};
-
-	// 회전
-	if (mSteps++ > 20)
-	{
-		mSteps = 0;
-		mRotation += (rand() % 3 - 1) * 45.0f;
-	}
-
-	// 전진
-	auto targetPos = UPVECTOR * D2D1::Matrix3x2F::Rotation(mRotation);
-	mX += targetPos.x;
-	mY += targetPos.y;
-
-	auto matTranslate = D2D1::Matrix3x2F::Translation(mX, mY);
-	auto matRotation = D2D1::Matrix3x2F::Rotation(mRotation,
-		D2D_POINT_2F{ size.width * 0.5f, size.height * 0.5f });
-
-	mpFramework->GetRenderTarget()->SetTransform(matRotation * matTranslate);
-
-	mpFramework->GetRenderTarget()->DrawBitmap(
-		mpBitmap,
-		rect,
-		mOpacity
-	);
-}
-
-bool Bug::IsClicked(POINT& pt)
-{
-	auto size{ mpBitmap->GetPixelSize() };
-
-	D2D1_RECT_F rect{
-		mX,mY,
-		static_cast<float>(mX + size.width),
-		static_cast<float>(mY + size.height)
-	};
-
-	if (pt.x >= rect.left && pt.x <= rect.right &&
-		pt.y >= rect.top && pt.y <= rect.bottom)
-	{
-		mIsDelete = true;
-		return true;
-	}
-
-	return false;
+	Actor::Draw();
 }
