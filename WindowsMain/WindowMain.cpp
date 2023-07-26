@@ -1,5 +1,5 @@
 #include <Windows.h>
-#include "ActorExample.h"
+#include "BuggyHouse.h"
 
 int WINAPI WinMain(
 	_In_ HINSTANCE hInstance,
@@ -12,7 +12,7 @@ int WINAPI WinMain(
 
 	try
 	{
-		ActorExample myFramework;
+		BuggyHouse myFramework;
 
 		HRESULT hr;
 		hr = myFramework.Initialize(hInstance);

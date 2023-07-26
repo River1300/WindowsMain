@@ -5,20 +5,13 @@
 #include <wrl/client.h>
 #include "ComException.h"
 
-// #. 그리기에 필요한 작업
-//		Input( 파일 이름을 받아서 ) Output( ID2D1Bitmap 인터페이스 )
-//			=> 처음 로딩이라면 ID2D1Bitmap 인터페이스를 생성하고 아니라면 기존의 인터페이스를 반환
-
-// 3. 프레임워크에서 예외처리 기능을 분리한다.
-
 class D2DFramework
 {
 	const LPCWSTR WindowClassName{ L"D2DWindowClass" };
 
 protected:
 	HWND mHwnd;
-
-	Microsoft::WRL::ComPtr<IWICImagingFactory> mspWICFactory{};
+	// WIC Factory는 매니저로 분리
 	Microsoft::WRL::ComPtr<ID2D1Factory> mspD2DFactory{};
 	Microsoft::WRL::ComPtr<ID2D1HwndRenderTarget> mspRenderTarget{};
 
@@ -41,5 +34,4 @@ public:
 
 public:
 	ID2D1HwndRenderTarget* GetRenderTarget() { return mspRenderTarget.Get(); }
-	IWICImagingFactory* GetWICFactory() { return mspWICFactory.Get(); }
 };

@@ -1,8 +1,8 @@
 #include <sstream>
 #include "D2DFramework.h"
+#include "BitmapManager.h"
 
 #pragma comment (lib, "d2d1.lib")
-#pragma comment (lib, "WindowsCodecs.lib" )
 
 HRESULT D2DFramework::InitWindow(HINSTANCE hInstance, LPCWSTR title, UINT width, UINT height)
 {
@@ -55,13 +55,9 @@ HRESULT D2DFramework::InitWindow(HINSTANCE hInstance, LPCWSTR title, UINT width,
 }
 
 HRESULT D2DFramework::InitD2D()
-{	// 1. WIC Factory 만드는 작업을 매니저로 옮김
-	HRESULT hr = ::CoCreateInstance(CLSID_WICImagingFactory,
-		nullptr,
-		CLSCTX_INPROC_SERVER,
-		IID_PPV_ARGS(mspWICFactory.GetAddressOf())
-	);
-	ThrowIfFailed(hr);	//
+{
+	HRESULT hr;
+	// Factory 생성 작업, 매니저로 분리
 
 	hr = D2D1CreateFactory(
 		D2D1_FACTORY_TYPE_SINGLE_THREADED,
@@ -102,6 +98,10 @@ HRESULT D2DFramework::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width,
 	hr = InitD2D();
 	ThrowIfFailed(hr);
 
+	// 인스턴스를 만들고 초기화
+	hr = BitmapManager::Instance().Initialize(mspRenderTarget.Get());
+	ThrowIfFailed(hr, "Failed To Create BitmapManager");
+
 	ShowWindow(mHwnd, SW_NORMAL);
 	UpdateWindow(mHwnd);
 
@@ -110,8 +110,10 @@ HRESULT D2DFramework::Initialize(HINSTANCE hInstance, LPCWSTR title, UINT width,
 
 void D2DFramework::Release()
 {
-	mspRenderTarget.ReleaseAndGetAddressOf();
-	mspWICFactory.ReleaseAndGetAddressOf();
+	BitmapManager::Instance().Release();
+
+	mspRenderTarget.Reset();
+	mspD2DFactory.Reset();
 
 	CoUninitialize();
 }

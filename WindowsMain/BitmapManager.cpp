@@ -67,7 +67,7 @@ HRESULT BitmapManager::Initialize(ID2D1HwndRenderTarget* pRT)
 }
 
 void BitmapManager::Release()
-{	// 로딩된 비트맵 이미지들을 해제
+{
 	for (auto& bitmap : mBitmapResources) bitmap.second.Reset();
 
 	mBitmapResources.clear();
@@ -79,9 +79,6 @@ ID2D1Bitmap* BitmapManager::LoadBitmap(std::wstring filename)
 	if (mspWICFactory == nullptr) return nullptr;
 
 	ID2D1Bitmap* pBitmap{};
-	// map은 고유한 키를 가지도록 만들기 위해 insert할때 해당 키로 탐색을 수행한다.
-	//		=> ID2D1Bitmap 타입에 들어간 second값이 이미 있다면 넣을 필요도 없다.
-	//		=> 처음에 insert를 할 때에는 아무것도 넣지 않는다.
 	auto result = mBitmapResources.insert(
 		pair<wstring, ComPtr<ID2D1Bitmap>>(filename, nullptr)
 	);

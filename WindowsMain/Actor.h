@@ -1,32 +1,34 @@
 #pragma once
 
-// #. WIC로 이미지를 불러오고 화면에 그리는 과정
-//		=> 공용 : ID2D1HwndRenderTarget( 비트맵을 그림 ), IWICImagingFactory( WIC 디코더 생성 )
-//		=> 개별 : ID2D1Bitmap( 비트맵 저장 )
 #include "D2DFramework.h"
 
 class Actor
 {
 protected:
 	D2DFramework* mpFramework;
-	Microsoft::WRL::ComPtr<ID2D1Bitmap> mspBitmap;
+	ID2D1Bitmap* mpBitmap;	// 메모리 소유권은 매니저가 보유하고 있고 Actor는 참조만 할 것이므로 일반 포인터로 변경
 
-	// 화면에 그릴 위치와 투명도를 멤버로 저장, 파생 클래스가 사용할 수 있도록 protected 지정
 	float mX;
 	float mY;
 	float mOpacity;
 
 public:
-	Actor() = delete;	// Actor클래스는 D2DFramework 정보가 없으면 아무런 처리도 할 수 없다.
-//		=> 따라서 이 클래스를 사용하는 프로그래머의 실수를 막기 위해 기본 생성자를 제거한다.
+	Actor() = delete;
 	Actor(D2DFramework* pFramework, LPCWSTR filename);
 	Actor(D2DFramework* pFramework, LPCWSTR filename, float x, float y, float opacity = 1.0f);
-	virtual ~Actor();	// 파괴자는 꼭 가상함수로
+	virtual ~Actor();
 
 private:
-	HRESULT LoadWICImage(LPCWSTR filename);
-	void Draw(float x, float y, float opacity = 1.0f);	// 내부용 그리기 함수
+	// 이미지는 매니저가 부름
+	void Draw(float x, float y, float opacity = 1.0f);
 
 public:
-	virtual void Draw();	// 외부용 그리기 함수
+	virtual void Draw();
+
+public:
+	// position 정보를 Getter/Setter로 만든다.
+	//		=> Direct2D에서 사용하는 Vector 2차월 float
+	D2D_VECTOR_2F GetPosition() const { return D2D_VECTOR_2F{ mX,mY }; }
+	void SetPosition(D2D_VECTOR_2F& pos) { mX = pos.x; mY = pos.y; }
+	void SetPosition(float x, float y) { mX = x; mY = y; }
 };
