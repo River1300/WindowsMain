@@ -5,10 +5,6 @@
 #include "D2DFramework.h"
 #include "Actor.h"
 
-// #. 임의의 위치에 40마리의 벌레를 그려본다.
-//		=> 동적 관리 + 자유롭게 삽입/삭제하는 std::list를 사용
-//				=> 원소들이 다양한 곳에서 사용되므로 shared_ptr사용
-
 class BuggyHouse : public D2DFramework
 {
 	std::shared_ptr<Actor> mspBackground;
@@ -21,4 +17,6 @@ public:
 
 	virtual void Release() override;
 	virtual void Render() override;
+
+	void CheckBugs();	// 벌레를 클릭 했는지 처리하는 함수
 };
