@@ -345,3 +345,71 @@ ax + by =  m 형태는 우리가 지난 시간(그래픽카드 구현)에 사용한 직선의 방정식이다
 	파이 : 180 = radian : degree
 	radian = degree * 파이/180
 */
+
+/* erase-remove idiom */
+
+/*
+컨테이너에서 원소를 지우는 작업은 주의를 기울여야 한다. 특히나 순환하는 도중에 삭제하는 것은 위험하다.
+
+Actor myArray[100];
+for(int i = 0; i < 100; i++)
+	if(deleted)
+		배열을 하나씩 줄여야 한다.
+정적 배열에서 하나를 삭제하는 것은 배열의 크기를 매번 재할당해서 복사해야 하므로 좋은 방식은 아니다.
+	1. 지울 항목을 제외한 99개의 배열 생성
+	2. 99개의 원소 복사
+	3. 기존 배열을 수정된 배열로 교체
+
+리스트 표기
+범위기반 반복문은 도중에 삭제가 불가능 하다. 반복문 안에 들어 오는 것은 원소의 값이므로 이를 지울 방법이 없다.
+따라서 반복자를 사용해야 한다.
+
+List<int> myArray = { 1, 2, 3, 4, 5 };
+
+auto itr = myArray.begin();
+while(itr != myArray.cend())
+	if(*itr == 3)
+		myArray.remove(3);
+	itr++;
+컨테이너의 remove 함수는 해당 값과 동일한 모든 원소를 지워 버린다.
+각 원소들을 지운 후 파괴자를 호출하고 컨테이너의 사이즈를 조절한다. 그런데 이렇게 표현하면
+list iterator not incresmentable이라는 에러가 발생한다.
+
+리스트의 원소(3)을 지우고 나면 현재 itr에 있는 값은?
+[1][2][4][5][itr]
+이미 지워진 공간을 가리키고 있다. 그래서 그 다음 itr++가 작동하지 않는다.
+따라서 위와 같이 탐색 도중에는 remove를 사용할 수 없다.
+
+이를 위해 컨테이너는 list::erase라는 개별 함수가 있다. list::erase() 함수는 iterator를 입력 받아
+해당 원소를 지우고 크기를 조절한 뒤 올바른 iterator를 돌려준다. 따라서, 다음과 같이 사용해야 한다.
+
+List<int> myArray = { 1, 2, 3, 4, 5 };
+
+auto itr = myArray.begin();
+while(itr != myArray.cend())
+	if(*itr == 3)
+		itr = myArray.erase(itr);
+	else
+		itr++;
+그런데 슈팅 게임처럼 자주 컨테이너의 내용이 변경되는 경우, 수시로 여러개의 오브젝트들이 삭제될 것.
+따라서 list:erase()가 한 루프안에서 수십번 발생하게 된다. 리스트에서 원소 삭제에 대한 부담이 적다고는 하나 비효율 적이다.
+
+이러한 방식을 해결하기 위해 erase remove idiom 이라는 알고리즘이 등장했다.
+
+std::remove() : 실제로 컨테이너에서 원소를 지우지 않는다. 지울 원소를 컨테이너 끝으로 보낸다.
+std::remove_if() : 조건에 만족하는 원소에 대해 remove를 수행한다.
+	
+위 알고리즘을 수행하고 나면 뒤에 붙은 불필요한 원소의 iterator가 반환된다.
+
+std::list<int> myArray = { 1, 2, 3, 4, 5 };
+
+auto logicalEnd = std::remove_if(
+	myArray.begin(), myArray.end(), [](int e) { return e == 3; });
+myArray.erase(logicalEnd, myArray.end());
+
+erase( remove () ) 형태로 구현하라는 의미로 erase-remove idiom이다.
+
+수많은 오브젝트를 가진 컨테이너에서 자주 오브젝트를 삭제해야 한다면
+	1. 지워질 오브젝트는 별도로 관리(플래그 등)
+	2. 컨테이너 전체를 대상으로 erase-remove idiom 수행
+*/
