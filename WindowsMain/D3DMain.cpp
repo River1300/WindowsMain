@@ -1,4 +1,20 @@
-#define WIN32_LEAN_AND_MEAN	// WIN32의 기능들 중 최소한의 기능들만을 불러올때 사용
+#define WIN32_LEAN_AND_MEAN
+
+// microsoft docs directX : 라이브러리에 대한 자세한 설명(EN)
+
+// #. D3D 초기화 순서
+//		1. 디바이스 생성( 디바이스 컨텍스트 )
+//		2. 스왑체인 생성
+//		3. 렌더타겟 + 렌더타겟 뷰 생성
+//			=> 스왑체인의 백버퍼를 렌더타겟으로 지정
+//		4. 뎁스-스텐실 버퍼 + 뎁스-스텐실 뷰 생성
+//		5. 뷰포트( 그림을 그릴 좌표 )를 지정
+//			=> 일반적으로 윈도우 클라이언트 영역
+//		6. 렌더링
+//			=> 렌더타겟( 백버퍼 ) 지우기
+//			=> 뎁스-스텐실 버퍼 지우기
+//			=> 그리기
+//			=> Present( Flip )
 
 #include <Windows.h>
 #include <wrl/client.h>
@@ -14,15 +30,13 @@ const int WINDOW_HEIGHT{ 600 };
 HWND gHwnd{};
 HINSTANCE gInstance{};
 
-Microsoft::WRL::ComPtr<ID3D11Device>		gspDevice{};	// 그래픽카드를 제어하고 관리
-Microsoft::WRL::ComPtr<ID3D11DeviceContext> gspDeviceContext{};	// 3D화면을 2D로 렌더링하는 것을 정의
-Microsoft::WRL::ComPtr<IDXGISwapChain>		gspSwapChain{};	// 스왑체인 : 후면 버퍼를 관리, 플립을 통해 교차, 렌더타겟을 후면으로 지정
+Microsoft::WRL::ComPtr<ID3D11Device>		gspDevice{};
+Microsoft::WRL::ComPtr<ID3D11DeviceContext> gspDeviceContext{};
+Microsoft::WRL::ComPtr<IDXGISwapChain>		gspSwapChain{};
 
-// RenderTarget
 Microsoft::WRL::ComPtr<ID3D11Texture2D>			gspRenderTarget{};
 Microsoft::WRL::ComPtr<ID3D11RenderTargetView>	gspRenderTargetView{};
 
-// DepthStencil
 Microsoft::WRL::ComPtr<ID3D11Texture2D>			gspDepthStencil{};
 Microsoft::WRL::ComPtr<ID3D11DepthStencilView>	gspDepthStencilView{};
 
@@ -31,13 +45,6 @@ void DestroyD3D();
 void Render();
 
 LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
-
-// 1. 디바이스 생성(그래픽 카드), 디바이스 컨텍스트(DC) 포함
-// 2. 모니터에 보내주는 스왑체인(SwapChain)
-// 3. 렌더타겟을 만들고 지정(BackBuffer에 렌더타겟을 지정)
-// 4. 깊이-스텐실 버퍼(누가 앞에 있는지 뒤에 있는지, 화면에 그릴 공간과 그리지 않을 공간)
-// 5. 뷰포드(Viewport), 카메라와 비슷한 기능, 2D 공간
-// 6. 화면에 그리기
 
 int WINAPI WinMain(
 	_In_ HINSTANCE hInstance,
@@ -91,8 +98,8 @@ int WINAPI WinMain(
 
 	ShowWindow(gHwnd, nShowCmd);
 
-	SetForegroundWindow(gHwnd);	// 윈도우를 최상단으로 올리고 활성상태로 만들어 준다.
-	SetFocus(gHwnd);	// 지정 윈도우에 키보드 포커르를 지정한다.
+	SetForegroundWindow(gHwnd);
+	SetFocus(gHwnd);
 
 	UpdateWindow(gHwnd);
 
@@ -140,14 +147,13 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 }
 
 void InitD3D()
-{	// 디바이스, 디바이스 컨텍스트, 스왑체인 생성
+{
 	DXGI_SWAP_CHAIN_DESC scd;
 
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
-	scd.BufferCount = 1;	// 스왑체인에는 프론트버퍼와 백버퍼가 들어 있는데 옵션으로 1을 배정해 주면 백버퍼를 1개로 만든다.
-//		=> 프론트버퍼는 필수이기 때문에 갯수를 지정하지 않아도 1개가 이미 있다. 지정하게되는 갯수는 백버퍼를 증가 시킨다.
+	scd.BufferCount = 1;
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;	// 백버퍼는 그리기 용으로 사용될 것
+	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = gHwnd;
 	scd.SampleDesc.Count = 1;
 	scd.Windowed = TRUE;
@@ -167,18 +173,13 @@ void InitD3D()
 		gspDeviceContext.ReleaseAndGetAddressOf()
 	);
 
-	// 만들어진 버퍼를 렌더타겟으로 지정
 	gspSwapChain->GetBuffer(0, IID_PPV_ARGS(gspRenderTarget.ReleaseAndGetAddressOf()));
 	gspDevice->CreateRenderTargetView(
 		gspRenderTarget.Get(),
 		nullptr,
 		gspRenderTargetView.ReleaseAndGetAddressOf()
 	);
-	//		=> 스왑체인 안에 프론트버퍼와 백버퍼가 있는데 백버퍼에 그리기 위해 렌더타겟으로 백버퍼를 지정해 준다.
-	//		=> 0번 버퍼(텍스쳐2D)를 가져와서 렌더타겟 변수에 저장한다.
-	//		=> 리소스를 가져오면 리소스를 해석할 수 있는 View를 만들어준다.
 
-		// Depth-Stencil 만들고 리소스를 해석할 수 있는 View를 만들기
 	CD3D11_TEXTURE2D_DESC dsd(
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
 		WINDOW_WIDTH,
@@ -196,15 +197,12 @@ void InitD3D()
 		gspDepthStencilView.ReleaseAndGetAddressOf()
 	);
 
-	// 파이프라인 커스터마이징
 	gspDeviceContext->OMSetRenderTargets(
 		1,
 		gspRenderTargetView.GetAddressOf(),
 		gspDepthStencilView.Get()
 	);
-	//		=> 파이프라인의 Output Merger 단계에 만들어둔 View를 조립
 
-		// 뷰포트 만들기 : 화면에 그려지는 영영
 	CD3D11_VIEWPORT viewport(
 		0.0f,
 		0.0f,
@@ -217,6 +215,10 @@ void InitD3D()
 
 void DestroyD3D()
 {
+	gspDepthStencil.Reset();
+	gspDepthStencilView.Reset();
+	gspRenderTarget.Reset();
+	gspRenderTargetView.Reset();
 	gspSwapChain.Reset();
 	gspDeviceContext.Reset();
 	gspDevice.Reset();
@@ -227,5 +229,22 @@ void DestroyD3D()
 
 void Render()
 {
+	// 렌더타겟 뷰 + 뎁스스텐실 뷰를 지우고 Present를 통해 모니터에 출력
+	const float clear_color[4]{ 0.f,0.2f,0.4f,1.0f };
+	gspDeviceContext->ClearRenderTargetView(
+		gspRenderTargetView.Get(),
+		clear_color
+	);
+	// 물체가 앞에 있는지 뒤에 있는지 담아 놓은 정보도 지워주어야 한다.
+	gspDeviceContext->ClearDepthStencilView(
+		gspDepthStencilView.Get(),
+		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+		1.0f,
+		0
+	);
 
+	// SwapChain을 만들어서 그 안에 있는 BackBuffer를 RenderTarget으로 지정하였다.
+	//		=> BackBuffer에 그림을 그리도록 구축하여 파이프라인의 Output Merger에 렌더타겟을 장착시켰다.
+	//		=> 이제 화면에 출력하기 위해 Flip으로 BackBuffer와 FrontBuffer를 뒤바꿔 주어야 한다.
+	gspSwapChain->Present(0, 0);
 }
