@@ -1,20 +1,19 @@
 #define WIN32_LEAN_AND_MEAN
 
-// microsoft docs directX : 라이브러리에 대한 자세한 설명(EN)
+// #. 과거 Direct Fullscreen Mode
+//	=> 전체화면 그래픽카드 독점 모드
+//	=> 컨텍스트 스위칭( 알트 탭 )을 할 때 VRAM 전체를 사용하고 있던 게임이 지워지고 Window가 그자리를 차지함
+//	=> 작업 전환에 매우 취약해 진다.
 
-// #. D3D 초기화 순서
-//		1. 디바이스 생성( 디바이스 컨텍스트 )
-//		2. 스왑체인 생성
-//		3. 렌더타겟 + 렌더타겟 뷰 생성
-//			=> 스왑체인의 백버퍼를 렌더타겟으로 지정
-//		4. 뎁스-스텐실 버퍼 + 뎁스-스텐실 뷰 생성
-//		5. 뷰포트( 그림을 그릴 좌표 )를 지정
-//			=> 일반적으로 윈도우 클라이언트 영역
-//		6. 렌더링
-//			=> 렌더타겟( 백버퍼 ) 지우기
-//			=> 뎁스-스텐실 버퍼 지우기
-//			=> 그리기
-//			=> Present( Flip )
+// #. 현재 Fullscreen - Windows Mode
+//	=> Window와 Game이 동시에 하드웨어 가속을 받게 됨
+
+// #. 해상도가 변경되면 영향을 받는 리소스
+//		=> SwapChain
+//		=> 렌더타겟( 텍스쳐 ) - 렌더타겟 뷰
+//		=> Depth-Stencill - 뎁스-스텐실 뷰
+//		=> 뷰포트
+//	=> 파이프라인 업데이트
 
 #include <Windows.h>
 #include <wrl/client.h>
@@ -24,8 +23,13 @@
 
 const wchar_t gClassName[]{ L"MyWindowClass" };
 const wchar_t gTitle[]{ L"Direct3D Example" };
-const int WINDOW_WIDTH{ 800 };
-const int WINDOW_HEIGHT{ 600 };
+
+// #. 윈도우의 창이 커지면 해상도 또한 커져야 한다.
+//		=> WM_ENTERSIZEMOVE
+//		=> WM_SIZE
+//		=> WM_EXITSIZEMOVE
+int gScreenWidth{ 800 };
+int gScreenHeight{ 600 };
 
 HWND gHwnd{};
 HINSTANCE gInstance{};
@@ -43,6 +47,12 @@ Microsoft::WRL::ComPtr<ID3D11DepthStencilView>	gspDepthStencilView{};
 void InitD3D();
 void DestroyD3D();
 void Render();
+void OnResize();
+
+// 현재 윈도우 상태의 상태를 체크할 플래그
+bool gMinimized{ false };
+bool gMaximized{ false };
+bool gResizing{ false };
 
 LRESULT CALLBACK WindowProc(HWND, UINT, WPARAM, LPARAM);
 
@@ -72,7 +82,7 @@ int WINAPI WinMain(
 		return 0;
 	}
 
-	RECT wr{ 0, 0, WINDOW_WIDTH, WINDOW_HEIGHT };
+	RECT wr{ 0, 0, gScreenWidth, gScreenHeight };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
 	gHwnd = CreateWindowEx(
@@ -134,12 +144,77 @@ LRESULT CALLBACK WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lPara
 {
 	switch (message)
 	{
+		// 1. 사이즈 변경 중
+	case WM_ENTERSIZEMOVE:
+		gResizing = true;
+		break;
+
+		// 3. 사이즈 변경 처리
+	case WM_SIZE:
+		gScreenWidth = LOWORD(lParam);
+		gScreenHeight = HIWORD(lParam);
+
+		if (gspDevice)
+		{
+			if (wParam == SIZE_MINIMIZED)
+			{
+				gMinimized = true;
+				gMaximized = false;
+			}
+			else if (wParam == SIZE_MAXIMIZED)
+			{
+				gMinimized = false;
+				gMaximized = true;
+				OnResize();
+			}
+			else if (wParam == SIZE_RESTORED)
+			{
+				if (gMinimized)
+				{
+					gMinimized = false;
+					OnResize();
+				}
+				else if (gMaximized)
+				{
+					gMaximized = false;
+					OnResize();
+				}
+				else if (gResizing)
+				{
+
+				}
+				else
+				{
+					OnResize();
+				}
+			}
+		}
+
+		break;
+
+		// 2. 사이즈 변경 완료
+	case WM_EXITSIZEMOVE:
+		gResizing = false;
+		OnResize();
+		break;
+
+	case WM_MENUCHAR:
+		return MAKELRESULT(0, MNC_CLOSE);
+		break;
+
+	case WM_GETMINMAXINFO:
+		((MINMAXINFO*)lParam)->ptMinTrackSize.x = 640;
+		((MINMAXINFO*)lParam)->ptMinTrackSize.y = 480;
+		break;
+
 	case WM_CLOSE:
 		DestroyWindow(hWnd);
 		break;
+
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		break;
+
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
@@ -153,6 +228,11 @@ void InitD3D()
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 	scd.BufferCount = 1;
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+	// 버퍼의 가로/세로를 지정
+	scd.BufferDesc.Width = gScreenWidth;
+	scd.BufferDesc.Height = gScreenHeight;
+	// 윈도우 창의 모드를 전환할 수 있는 옵션
+	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	scd.OutputWindow = gHwnd;
 	scd.SampleDesc.Count = 1;
@@ -173,6 +253,70 @@ void InitD3D()
 		gspDeviceContext.ReleaseAndGetAddressOf()
 	);
 
+	OnResize();
+}
+
+void DestroyD3D()
+{
+	// 종료하기 전에 현재 윈도우가 창모드인지 확인하여 창모드로 돌려준다.
+	gspSwapChain->SetFullscreenState(FALSE, nullptr);
+
+	gspDepthStencil.Reset();
+	gspDepthStencilView.Reset();
+	gspRenderTarget.Reset();
+	gspRenderTargetView.Reset();
+
+	gspSwapChain.Reset();
+	gspDeviceContext.Reset();
+	gspDevice.Reset();
+
+	DestroyWindow(gHwnd);
+	UnregisterClass(gClassName, gInstance);
+}
+
+void Render()
+{
+	const float clear_color[4]{ 0.f,0.2f,0.4f,1.0f };
+	gspDeviceContext->ClearRenderTargetView(
+		gspRenderTargetView.Get(),
+		clear_color
+	);
+	gspDeviceContext->ClearDepthStencilView(
+		gspDepthStencilView.Get(),
+		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+		1.0f,
+		0
+	);
+
+	gspSwapChain->Present(0, 0);
+}
+
+void OnResize()
+{
+	// #. 그래픽카드 정리
+	// SwapChain의 버퍼 크기 수정
+	//		=> DirectX는 GPU에서 사용되는 리소스를 다룬다.
+	//		=> CPU가 GPU에게 명령을 내리면 VRAM에서 차례로 명령을 수행한다.
+	//		=> CPU와 GPU의 명령 처리 속도가 서로 동기화되지 않는다면 화면의 크기가 바뀌어도 이전 크기의 버퍼를 사용할 수 있다.
+	ID3D11RenderTargetView* nullViews[] = { nullptr };
+	gspDeviceContext->
+		OMSetRenderTargets(_countof(nullViews), nullViews, nullptr);
+
+	gspRenderTargetView.Reset();
+	gspDepthStencilView.Reset();
+	gspRenderTarget.Reset();
+	gspDepthStencil.Reset();
+
+	gspDeviceContext->Flush();	// 쌓여있는 CPU의 명령을 전부 처리하고 오라는 동기화 함수
+
+	gspSwapChain->ResizeBuffers(
+		0,
+		gScreenWidth,
+		gScreenHeight,
+		DXGI_FORMAT_UNKNOWN,
+		0
+	);
+
 	gspSwapChain->GetBuffer(0, IID_PPV_ARGS(gspRenderTarget.ReleaseAndGetAddressOf()));
 	gspDevice->CreateRenderTargetView(
 		gspRenderTarget.Get(),
@@ -182,8 +326,8 @@ void InitD3D()
 
 	CD3D11_TEXTURE2D_DESC dsd(
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
-		WINDOW_WIDTH,
-		WINDOW_HEIGHT,
+		gScreenWidth,
+		gScreenHeight,
 		1,
 		1,
 		D3D11_BIND_DEPTH_STENCIL
@@ -206,45 +350,9 @@ void InitD3D()
 	CD3D11_VIEWPORT viewport(
 		0.0f,
 		0.0f,
-		static_cast<float>(WINDOW_WIDTH),
-		static_cast<float>(WINDOW_HEIGHT)
+		static_cast<float>(gScreenWidth),
+		static_cast<float>(gScreenHeight)
 	);
 
 	gspDeviceContext->RSSetViewports(1, &viewport);
-}
-
-void DestroyD3D()
-{
-	gspDepthStencil.Reset();
-	gspDepthStencilView.Reset();
-	gspRenderTarget.Reset();
-	gspRenderTargetView.Reset();
-	gspSwapChain.Reset();
-	gspDeviceContext.Reset();
-	gspDevice.Reset();
-
-	DestroyWindow(gHwnd);
-	UnregisterClass(gClassName, gInstance);
-}
-
-void Render()
-{
-	// 렌더타겟 뷰 + 뎁스스텐실 뷰를 지우고 Present를 통해 모니터에 출력
-	const float clear_color[4]{ 0.f,0.2f,0.4f,1.0f };
-	gspDeviceContext->ClearRenderTargetView(
-		gspRenderTargetView.Get(),
-		clear_color
-	);
-	// 물체가 앞에 있는지 뒤에 있는지 담아 놓은 정보도 지워주어야 한다.
-	gspDeviceContext->ClearDepthStencilView(
-		gspDepthStencilView.Get(),
-		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
-		1.0f,
-		0
-	);
-
-	// SwapChain을 만들어서 그 안에 있는 BackBuffer를 RenderTarget으로 지정하였다.
-	//		=> BackBuffer에 그림을 그리도록 구축하여 파이프라인의 Output Merger에 렌더타겟을 장착시켰다.
-	//		=> 이제 화면에 출력하기 위해 Flip으로 BackBuffer와 FrontBuffer를 뒤바꿔 주어야 한다.
-	gspSwapChain->Present(0, 0);
 }
