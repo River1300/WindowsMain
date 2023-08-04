@@ -299,3 +299,58 @@ GPU에서 점점 더 많은 그래픽 처리를 수행함에 따라 이를 프로그래머가 직접 제어할 �
 	일반 언어의 발전과 비슷하게 점점 GPU의 성능이 올라가면서 셰이더 언어도 C 스타일이 고급 언어로 발전하게 되었습니다.
 	그 중 DirectX에서 사용하는 것을 DirectX HLSL이라 한다. 그 외에도 자주 사용되는 언어는 NVIDIA의 Cg, OpenGL의 GLSL, Apple의 Metal Shading이 있다.
 */
+
+/* DXGI Flip Model */
+
+/*
+여러 개의 버퍼를 사용해 자연스러운 애니메이션을 표현하는 방법들 중 가장 자주 사용하는 방법은 Bit Mode( Bit Bit )와 Flip Mode이다.
+
+Bit Mode Present
+	DX app surface : DX app Updates its Client area
+		DX app surface -> Bit to DWM surface of DX app -> DWM surface of DX app
+	Flip Chain Buffer
+		DWM renders to screen using DWM's shared DX surface
+Flip Mode Present
+	DX app surface : DX app updates its client area
+		Flip mode present to DWM, no additional bit
+	Flip Chain Buffer
+		DWM renders to screen using pointer to updated DX surface
+
+DWM : Desktop Window Manager, Windows 7 에서 추가된 윈도우 관리자이다.
+
+Bit Mode :
+	앱이 프레임에 그린다.
+	D3D가 버퍼의 내용을 다른 버퍼로 복사한다.
+	복사가 끝나면 DWM이 화면으로 그린다.
+Flip Mode :
+	앱이 프레임에 그린다.
+	D3D가 버퍼를 DWM으로 넘겨 준다.
+	DWM이 화면으로 그린다.
+
+당연히 Flip 방식이 읽기, 쓰기 연산이 빠지므로 빠르다.
+과거의 DirectX는 독점 모드에서만 Flip을 지원했는데 Windows7 과 DWM에 의해 창모드에서도 사용이 가능해 졌다.
+*/
+
+/* Dirty Rectangle & Scroll Rectangle */
+
+/*
+동영상 코덱 등에서는 파일 크기를 줄이기 위해 이전 장면과 현재 장면의 변경된 내용만 그리는 압축을 자주 사용한다.
+이렇게 변화해야 할 영역을 갱신이 필요한 더러운 영역이라 부른다.
+게임에서도 성능향상을 위해 혹은 동영상을 표현하기 위해 이런 방식을 사용할 수 있다.
+
+Dirty Rect 방식 중 스크롤 형태를 가지는 방식이 있다.
+
+Previous Frame / Back Buffer befor Present -> Present Frame
+화면이 스크롤 되어 기존 영역의 위치가 변경되고 일부가 갱신괼 경우 버퍼를 스크롤하고, 일부 영역만 그리는 방식을 사용하면 전체를
+갱신하는 것에 비해 효율적으로 화면을 표시할 수 있다.
+
+더블 버퍼를 사용하면 조금 더 깔끔해 진다.
+	1. 현재 전면 버퍼의 내용이 화면에 그려진 상태
+	2. 후면 버퍼의 dirty rect를 설정해 변경될 영역을 그린다.( 위치나 내용이 변경된 비디오, 새로운 줄 )
+	3. IDXGISwapChin::Present를 호출할 때 다음 정보를 넘겨 준다.
+		a. Dirty Rectangles : 변경된 영역
+		b. Scroll Rectangles : 스크롤 영역
+		c. Scroll Offset : 스크롤된 오프셋
+	위 정보들로 이전 프레임( 현재 전면 버퍼의 내용 )에서 스크롤 영역을 복사 한다. 물론 dirty rectangle의 내용은 갱신할 테니 가져오지 않는다.
+	4. 버퍼 swap 하여 화면에 표시
+*/
