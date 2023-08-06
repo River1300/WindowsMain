@@ -3,9 +3,7 @@
 #include "DrawTriangle.h"
 
 void DrawTriangle::InitTriangle()
-{	// 텍스쳐 좌표 추가
-	//	U : 0.0 -> 1.0
-	//	V : 0.0 -> 1.0
+{
 	VERTEX vertices[]{
 	{-0.45f,  0.5f, 0.0f, 0.0f, 0.0f },
 	{ 0.45f,  0.5f, 0.0f, 1.0f, 0.0f },
@@ -83,7 +81,6 @@ void DrawTriangle::InitPipeline()
 	mspDeviceContext->VSSetShader(mspVertexShader.Get(), nullptr, 0);
 	mspDeviceContext->PSSetShader(mspPixelShader.Get(), nullptr, 0);
 
-	// 버텍스 구조가 변경되었으므로 파이프라인에 넘겨줄 입력-레이아웃도 수정
 	D3D11_INPUT_ELEMENT_DESC ied[]{
 		{
 			"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0,
@@ -103,21 +100,36 @@ void DrawTriangle::InitPipeline()
 		mspInputLayout.ReleaseAndGetAddressOf()
 	);
 	mspDeviceContext->IASetInputLayout(mspInputLayout.Get());
+
+	float border[4]{ 0.0f,0.0f,0.0f,0.0f };	// 텍스쳐 테두리에 대한 색상
+	CD3D11_SAMPLER_DESC sampler_desc(	// 샘플러 상태를 설정하는 구조체
+		D3D11_FILTER_MIN_MAG_MIP_POINT,	// 다양한 필터링 옵션으로 그릴 수 있다.
+		D3D11_TEXTURE_ADDRESS_WRAP,
+		D3D11_TEXTURE_ADDRESS_WRAP,
+		D3D11_TEXTURE_ADDRESS_WRAP,
+		0.0f,
+		1,
+		D3D11_COMPARISON_ALWAYS,
+		border,
+		0,
+		1
+	);
+
+	mspDevice->CreateSamplerState(&sampler_desc, mspSamplerState.ReleaseAndGetAddressOf());
+	// 샘플러를 셰이더에 연결
+	mspDeviceContext->PSSetSamplers(0, 1, mspSamplerState.GetAddressOf());
 }
 
 HRESULT DrawTriangle::CreateTextureFromBMP()
 {
-	// 1. 파일 열기
 	std::ifstream file;
 	file.open("Data/32.bmp", std::ios::binary);
 
 	BITMAPFILEHEADER bmh;
 	BITMAPINFOHEADER bmi;
 
-	// 2. BITMAPFILEHEADER 읽기
 	file.read(reinterpret_cast<char*>(&bmh), sizeof(BITMAPFILEHEADER));
 
-	// 3. BITMAPINFOHEADER 읽기
 	file.read(reinterpret_cast<char*>(&bmi), sizeof(BITMAPINFOHEADER));
 
 	if (bmh.bfType != 0x4D42)
@@ -131,10 +143,8 @@ HRESULT DrawTriangle::CreateTextureFromBMP()
 
 	std::vector<char> pPixels(bmi.biSizeImage);
 
-	// 4. 픽셀로 건너뛰기
 	file.seekg(bmh.bfOffBits);
 
-	// 5. 비트맵 읽기
 	int pitch = bmi.biWidth * (bmi.biBitCount / 8);
 	for (int y = bmi.biHeight - 1; y >= 0; y--)
 	{
@@ -143,7 +153,6 @@ HRESULT DrawTriangle::CreateTextureFromBMP()
 
 	file.close();
 
-	// D3D11_TEXTURE2D_DESC 구조체의 헬퍼 구조체
 	CD3D11_TEXTURE2D_DESC tex_desc(
 		DXGI_FORMAT_R8G8B8A8_UNORM,
 		bmi.biWidth,
@@ -152,14 +161,11 @@ HRESULT DrawTriangle::CreateTextureFromBMP()
 		1
 	);
 
-	// 하위 리소스를 초기화 할 때 사용하는 정보에 대한 구조체, 리소스는 여러 개의 하위 리소스로 구분외어 있으므로 하위 리소스 개념을 사용
 	D3D11_SUBRESOURCE_DATA initData;
-	initData.pSysMem = &pPixels[0];	// 초기화 데이터에 대한 포인터
-	initData.SysMemPitch = pitch;				// 다음 라인까지의 바이트 거리
-	initData.SysMemSlicePitch = 0;				// 다음 단계 까지의 바이트 거리
+	initData.pSysMem = &pPixels[0];
+	initData.SysMemPitch = pitch;
+	initData.SysMemSlicePitch = 0;
 
-	// 텍스쳐를 생성, 함수의 두번째 파라미터는 초기값, 위에서 생성한 하위 리소스 데이터를 넘겨주면 그 데이터로 텍스쳐를 생성
-	//		=> 즉, BMP파일의 픽셀로 텍스쳐를 생성하는 것
 	mspDevice->CreateTexture2D(&tex_desc, &initData, mspTexture.ReleaseAndGetAddressOf());
 
 	CD3D11_SHADER_RESOURCE_VIEW_DESC srv_desc(
@@ -181,7 +187,6 @@ void DrawTriangle::Initialize(HINSTANCE hInstance, int width, int height)
 	InitPipeline();
 	InitTriangle();
 
-	// 초기화에서 텍스쳐 로딩 함수를 불러 주고, 종료할 때 인터페이스를 해제해 준다.
 	CreateTextureFromBMP();
 }
 
@@ -209,7 +214,6 @@ void DrawTriangle::Render()
 	mspDeviceContext->IASetPrimitiveTopology(
 		D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
 	);
-	// 셰이더 리소스 배열을 픽셀 셰이더 스테이지로 바인딩
 	mspDeviceContext->PSSetShaderResources(0, 1, mspTextureView.GetAddressOf());
 	mspDeviceContext->Draw(4, 0);
 }
