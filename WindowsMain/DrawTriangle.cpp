@@ -101,9 +101,9 @@ void DrawTriangle::InitPipeline()
 	);
 	mspDeviceContext->IASetInputLayout(mspInputLayout.Get());
 
-	float border[4]{ 0.0f,0.0f,0.0f,0.0f };	// 텍스쳐 테두리에 대한 색상
-	CD3D11_SAMPLER_DESC sampler_desc(	// 샘플러 상태를 설정하는 구조체
-		D3D11_FILTER_MIN_MAG_MIP_POINT,	// 다양한 필터링 옵션으로 그릴 수 있다.
+	float border[4]{ 0.0f,0.0f,0.0f,0.0f };
+	CD3D11_SAMPLER_DESC sampler_desc(
+		D3D11_FILTER_MIN_MAG_MIP_POINT,
 		D3D11_TEXTURE_ADDRESS_WRAP,
 		D3D11_TEXTURE_ADDRESS_WRAP,
 		D3D11_TEXTURE_ADDRESS_WRAP,
@@ -116,8 +116,21 @@ void DrawTriangle::InitPipeline()
 	);
 
 	mspDevice->CreateSamplerState(&sampler_desc, mspSamplerState.ReleaseAndGetAddressOf());
-	// 샘플러를 셰이더에 연결
 	mspDeviceContext->PSSetSamplers(0, 1, mspSamplerState.GetAddressOf());
+
+	// 블렌드 상태를 생성하기 위한 구조체
+	D3D11_BLEND_DESC blend_desc;
+	ZeroMemory(&blend_desc, sizeof(D3D11_BLEND_DESC));
+	blend_desc.RenderTarget[0].BlendEnable = true;
+	blend_desc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+	blend_desc.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+	blend_desc.RenderTarget[0].SrcBlend = D3D11_BLEND_ONE;
+	blend_desc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+	blend_desc.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
+	blend_desc.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+	blend_desc.RenderTarget[0].RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL;
+	mspDevice->CreateBlendState(&blend_desc, mspBlendState.ReleaseAndGetAddressOf());
+	mspDeviceContext->OMSetBlendState(mspBlendState.Get(), nullptr, 0xffffffff);	// Output-Merger 스테이지에 사용할 블렌딩 상태를 생성
 }
 
 HRESULT DrawTriangle::CreateTextureFromBMP()
@@ -146,9 +159,36 @@ HRESULT DrawTriangle::CreateTextureFromBMP()
 	file.seekg(bmh.bfOffBits);
 
 	int pitch = bmi.biWidth * (bmi.biBitCount / 8);
-	for (int y = bmi.biHeight - 1; y >= 0; y--)
+	int index{};
+	char r{}, g{}, b{}, a{};
+	for (int y{ bmi.biHeight - 1 }; y >= 0; y--)
 	{
-		file.read(&pPixels[y * pitch], pitch);
+		index = y * pitch;
+		for (int x{ 0 }; x < bmi.biWidth; x++)
+		{
+			file.read(&b, 1);
+			file.read(&g, 1);
+			file.read(&r, 1);
+			file.read(&a, 1);
+
+			if (static_cast<unsigned char>(r) == 30 &&
+				static_cast<unsigned char>(g) == 199 &&
+				static_cast<unsigned char>(b) == 250)
+			{
+				pPixels[index] = 0;
+				pPixels[index + 1] = 0;
+				pPixels[index + 2] = 0;
+				pPixels[index + 3] = 0;
+			}
+			else
+			{
+				pPixels[index] = b;
+				pPixels[index + 1] = g;
+				pPixels[index + 2] = r;
+				pPixels[index + 3] = a;
+			}
+			index += 4;
+		}
 	}
 
 	file.close();
@@ -192,6 +232,8 @@ void DrawTriangle::Initialize(HINSTANCE hInstance, int width, int height)
 
 void DrawTriangle::Destroy()
 {
+	mspBlendState.Reset();
+
 	mspTextureView.Reset();
 	mspTexture.Reset();
 

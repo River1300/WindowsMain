@@ -19,7 +19,9 @@ class DrawTriangle : public D3DFramework
 	Microsoft::WRL::ComPtr<ID3D11PixelShader>			mspPixelShader;
 	Microsoft::WRL::ComPtr<ID3D11Texture2D>				mspTexture;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView>	mspTextureView;
-	Microsoft::WRL::ComPtr<ID3D11SamplerState>			mspSamplerState;	// 샘플러 인터페이스 추가
+
+	Microsoft::WRL::ComPtr<ID3D11SamplerState>			mspSamplerState;
+	Microsoft::WRL::ComPtr<ID3D11BlendState>			mspBlendState;	// 블렌드 상태 인터페이스
 
 public:
 	void Initialize(HINSTANCE hInstance, int width = 800, int height = 600) override;
