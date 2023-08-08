@@ -1,5 +1,4 @@
 #include "DrawTriangle.h"
-#include "Timer.h"
 
 int WINAPI WinMain(
 	_In_ HINSTANCE hInstance,
@@ -8,7 +7,6 @@ int WINAPI WinMain(
 	_In_ int nShowCmd
 )
 {
-	MyUtil::Timer t;
 	DrawTriangle framework;
 
 	framework.Initialize(hInstance);

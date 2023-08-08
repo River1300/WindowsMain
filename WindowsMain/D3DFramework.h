@@ -6,42 +6,50 @@
 #include <wrl/client.h>
 #include <d3d11.h>
 #include <string>
+#include "Timer.h"
 
 #pragma comment (lib, "d3d11.lib")
 
 class D3DFramework
 {
 private:
-	const std::wstring gClassName{ L"MyWindowClass" };
-	const std::wstring gTitle{ L"Direct3D Example" };
+	const std::wstring mClassName{ L"MyWindowClass" };
+	const std::wstring mTitle{ L"Direct3D Example" };
 
 protected:
-	int gScreenWidth{ 800 };
-	int gScreenHeight{ 600 };
+	int mScreenWidth{ 800 };
+	int mScreenHeight{ 600 };
 
-	bool gMinimized{ false };
-	bool gMaximized{ false };
-	bool gResizing{ false };
+	bool mMinimized{ false };
+	bool mMaximized{ false };
+	bool mResizing{ false };
+	bool mPaused{ false };
 
-	HWND gHwnd{};
-	HINSTANCE gInstance{};
+	std::wstring mTitleText{};
+	MyUtil::Timer mTimer;
 
-	Microsoft::WRL::ComPtr<ID3D11Device>		gspDevice{};
-	Microsoft::WRL::ComPtr<ID3D11DeviceContext> gspDeviceContext{};
-	Microsoft::WRL::ComPtr<IDXGISwapChain>		gspSwapChain{};
+	HWND mHwnd{};
+	HINSTANCE mInstance{};
 
-	Microsoft::WRL::ComPtr<ID3D11Texture2D>			gspRenderTarget{};
-	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>	gspRenderTargetView{};
+	Microsoft::WRL::ComPtr<ID3D11Device>		mspDevice{};
+	Microsoft::WRL::ComPtr<ID3D11DeviceContext> mspDeviceContext{};
+	Microsoft::WRL::ComPtr<IDXGISwapChain>		mspSwapChain{};
 
-	Microsoft::WRL::ComPtr<ID3D11Texture2D>			gspDepthStencil{};
-	Microsoft::WRL::ComPtr<ID3D11DepthStencilView>	gspDepthStencilView{};
+	Microsoft::WRL::ComPtr<ID3D11Texture2D>			mspRenderTarget{};
+	Microsoft::WRL::ComPtr<ID3D11RenderTargetView>	mspRenderTargetView{};
+
+	Microsoft::WRL::ComPtr<ID3D11Texture2D>			mspDepthStencil{};
+	Microsoft::WRL::ComPtr<ID3D11DepthStencilView>	mspDepthStencilView{};
 
 private:
 	void InitWindow(HINSTANCE hInstance);
 	void InitD3D();
+	void CalculateFPS();
 
 protected:
 	void RenderFrame();
+	virtual void Render() {};
+	virtual void Update(float delta) {};
 	void OnResize();
 
 public:

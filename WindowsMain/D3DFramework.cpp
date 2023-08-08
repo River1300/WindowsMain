@@ -1,9 +1,11 @@
+#include <sstream>
 #include "D3DFramework.h"
 
 void D3DFramework::Initialize(HINSTANCE hInstance, int width, int height)
 {
-	gScreenWidth = width;
-	gScreenHeight = height;
+	mScreenWidth = width;
+	mScreenHeight = height;
+	mPaused = false;
 
 	InitWindow(hInstance);
 	InitD3D();
@@ -14,11 +16,11 @@ void D3DFramework::InitWindow(HINSTANCE hInstance)
 	WNDCLASSEX wc;
 	ZeroMemory(&wc, sizeof(WNDCLASSEX));
 
-	gInstance = hInstance;
+	mInstance = hInstance;
 
 	wc.style = CS_HREDRAW | CS_VREDRAW;
-	wc.lpszClassName = gClassName.c_str();
-	wc.hInstance = gInstance;
+	wc.lpszClassName = mClassName.c_str();
+	wc.hInstance = mInstance;
 	wc.hCursor = LoadCursor(NULL, IDC_ARROW);
 	wc.hbrBackground = nullptr;
 	wc.lpfnWndProc = WindowProc;
@@ -30,13 +32,15 @@ void D3DFramework::InitWindow(HINSTANCE hInstance)
 		return;
 	}
 
-	RECT wr{ 0, 0, gScreenWidth, gScreenHeight };
+	RECT wr{ 0, 0, mScreenWidth, mScreenHeight };
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
-	gHwnd = CreateWindowEx(
+	mTitleText = mTitle;
+
+	mHwnd = CreateWindowEx(
 		NULL,
-		gClassName.c_str(),
-		gTitle.c_str(),
+		mClassName.c_str(),
+		mTitleText.c_str(),
 		WS_OVERLAPPEDWINDOW,
 		CW_USEDEFAULT,
 		CW_USEDEFAULT,
@@ -44,25 +48,25 @@ void D3DFramework::InitWindow(HINSTANCE hInstance)
 		wr.bottom - wr.top,
 		NULL,
 		NULL,
-		gInstance,
+		mInstance,
 		NULL
 	);
 
-	if (gHwnd == nullptr)
+	if (mHwnd == nullptr)
 	{
 		MessageBox(nullptr, L"Failed To Create Window", L"ERROR", MB_OK);
 		return;
 	}
 
-	SetWindowLongPtr(gHwnd, GWLP_USERDATA,
+	SetWindowLongPtr(mHwnd, GWLP_USERDATA,
 		reinterpret_cast<LONG_PTR>(this));
 
-	ShowWindow(gHwnd, SW_SHOW);
+	ShowWindow(mHwnd, SW_SHOW);
 
-	SetForegroundWindow(gHwnd);
-	SetFocus(gHwnd);
+	SetForegroundWindow(mHwnd);
+	SetFocus(mHwnd);
 
-	UpdateWindow(gHwnd);
+	UpdateWindow(mHwnd);
 }
 
 void D3DFramework::InitD3D()
@@ -72,11 +76,11 @@ void D3DFramework::InitD3D()
 	ZeroMemory(&scd, sizeof(DXGI_SWAP_CHAIN_DESC));
 	scd.BufferCount = 1;
 	scd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-	scd.BufferDesc.Width = gScreenWidth;
-	scd.BufferDesc.Height = gScreenHeight;
+	scd.BufferDesc.Width = mScreenWidth;
+	scd.BufferDesc.Height = mScreenHeight;
 	scd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 	scd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	scd.OutputWindow = gHwnd;
+	scd.OutputWindow = mHwnd;
 	scd.SampleDesc.Count = 1;
 	scd.Windowed = TRUE;
 
@@ -89,112 +93,139 @@ void D3DFramework::InitD3D()
 		NULL,
 		D3D11_SDK_VERSION,
 		&scd,
-		gspSwapChain.ReleaseAndGetAddressOf(),
-		gspDevice.ReleaseAndGetAddressOf(),
+		mspSwapChain.ReleaseAndGetAddressOf(),
+		mspDevice.ReleaseAndGetAddressOf(),
 		NULL,
-		gspDeviceContext.ReleaseAndGetAddressOf()
+		mspDeviceContext.ReleaseAndGetAddressOf()
 	);
 
 	OnResize();
 }
 
+void D3DFramework::CalculateFPS()
+{
+	static int frameCnt{ 0 };
+	static float timeElapsed{ 0.0f };
+
+	frameCnt++;
+
+	if (mTimer.TotalTime() - timeElapsed >= 1.0f)
+	{
+		float fps = (float)frameCnt;
+		float mspf = 1000.0f / fps;
+
+		std::wostringstream outs;
+		outs.precision(6);
+		outs << mTitleText << L" - " << L"FPS : " << fps << L" , Frame Time : " << mspf << L"(ms)";
+
+		SetWindowText(mHwnd, outs.str().c_str());
+
+		frameCnt = 0;
+		timeElapsed += 1.0f;
+	}
+}
+
 void D3DFramework::RenderFrame()
 {
 	const float clear_color[4]{ 0.f,0.2f,0.4f,1.0f };
-	gspDeviceContext->ClearRenderTargetView(
-		gspRenderTargetView.Get(),
+	mspDeviceContext->ClearRenderTargetView(
+		mspRenderTargetView.Get(),
 		clear_color
 	);
-	gspDeviceContext->ClearDepthStencilView(
-		gspDepthStencilView.Get(),
+	mspDeviceContext->ClearDepthStencilView(
+		mspDepthStencilView.Get(),
 		D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
 		1.0f,
 		0
 	);
 
-	gspSwapChain->Present(0, 0);
+	Render();
+
+	mspSwapChain->Present(0, 0);
 }
 
 void D3DFramework::OnResize()
 {
 	ID3D11RenderTargetView* nullViews[] = { nullptr };
-	gspDeviceContext->
+	mspDeviceContext->
 		OMSetRenderTargets(_countof(nullViews), nullViews, nullptr);
 
-	gspRenderTargetView.Reset();
-	gspDepthStencilView.Reset();
-	gspRenderTarget.Reset();
-	gspDepthStencil.Reset();
+	mspRenderTargetView.Reset();
+	mspDepthStencilView.Reset();
+	mspRenderTarget.Reset();
+	mspDepthStencil.Reset();
 
-	gspDeviceContext->Flush();
+	mspDeviceContext->Flush();
 
-	gspSwapChain->ResizeBuffers(
+	mspSwapChain->ResizeBuffers(
 		0,
-		gScreenWidth,
-		gScreenHeight,
+		mScreenWidth,
+		mScreenHeight,
 		DXGI_FORMAT_UNKNOWN,
 		0
 	);
 
-	gspSwapChain->GetBuffer(0, IID_PPV_ARGS(gspRenderTarget.ReleaseAndGetAddressOf()));
-	gspDevice->CreateRenderTargetView(
-		gspRenderTarget.Get(),
+	mspSwapChain->GetBuffer(0, IID_PPV_ARGS(mspRenderTarget.ReleaseAndGetAddressOf()));
+	mspDevice->CreateRenderTargetView(
+		mspRenderTarget.Get(),
 		nullptr,
-		gspRenderTargetView.ReleaseAndGetAddressOf()
+		mspRenderTargetView.ReleaseAndGetAddressOf()
 	);
 
 	CD3D11_TEXTURE2D_DESC dsd(
 		DXGI_FORMAT_D24_UNORM_S8_UINT,
-		gScreenWidth,
-		gScreenHeight,
+		mScreenWidth,
+		mScreenHeight,
 		1,
 		1,
 		D3D11_BIND_DEPTH_STENCIL
 	);
-	gspDevice->CreateTexture2D(&dsd, nullptr, gspDepthStencil.ReleaseAndGetAddressOf());
+	mspDevice->CreateTexture2D(&dsd, nullptr, mspDepthStencil.ReleaseAndGetAddressOf());
 
 	CD3D11_DEPTH_STENCIL_VIEW_DESC dsvd(D3D11_DSV_DIMENSION_TEXTURE2D);
-	gspDevice->CreateDepthStencilView(
-		gspDepthStencil.Get(),
+	mspDevice->CreateDepthStencilView(
+		mspDepthStencil.Get(),
 		&dsvd,
-		gspDepthStencilView.ReleaseAndGetAddressOf()
+		mspDepthStencilView.ReleaseAndGetAddressOf()
 	);
 
-	gspDeviceContext->OMSetRenderTargets(
+	mspDeviceContext->OMSetRenderTargets(
 		1,
-		gspRenderTargetView.GetAddressOf(),
-		gspDepthStencilView.Get()
+		mspRenderTargetView.GetAddressOf(),
+		mspDepthStencilView.Get()
 	);
 
 	CD3D11_VIEWPORT viewport(
 		0.0f,
 		0.0f,
-		static_cast<float>(gScreenWidth),
-		static_cast<float>(gScreenHeight)
+		static_cast<float>(mScreenWidth),
+		static_cast<float>(mScreenHeight)
 	);
 
-	gspDeviceContext->RSSetViewports(1, &viewport);
+	mspDeviceContext->RSSetViewports(1, &viewport);
 }
 
 void D3DFramework::Destroy()
 {
-	gspSwapChain->SetFullscreenState(FALSE, nullptr);
+	mspSwapChain->SetFullscreenState(FALSE, nullptr);
 
-	gspDepthStencil.Reset();
-	gspDepthStencilView.Reset();
-	gspRenderTarget.Reset();
-	gspRenderTargetView.Reset();
+	mspDepthStencil.Reset();
+	mspDepthStencilView.Reset();
+	mspRenderTarget.Reset();
+	mspRenderTargetView.Reset();
 
-	gspSwapChain.Reset();
-	gspDeviceContext.Reset();
-	gspDevice.Reset();
+	mspSwapChain.Reset();
+	mspDeviceContext.Reset();
+	mspDevice.Reset();
 
-	DestroyWindow(gHwnd);
-	UnregisterClass(gClassName.c_str(), gInstance);
+	DestroyWindow(mHwnd);
+	UnregisterClass(mClassName.c_str(), mInstance);
 }
 
 void D3DFramework::GameLoop()
 {
+	mTimer.Start();
+
 	MSG msg{};
 	while (true)
 	{
@@ -210,8 +241,20 @@ void D3DFramework::GameLoop()
 		}
 		else
 		{
-			// GAME CODE
-			RenderFrame();
+			mTimer.Update();
+
+			if (mPaused)
+			{
+				Sleep(100);
+			}
+			else
+			{
+				CalculateFPS();
+
+				// 계산과 그림을 분리한다.
+				Update(mTimer.DeltaTime());
+				RenderFrame();
+			}
 		}
 	}
 }
@@ -220,8 +263,21 @@ LRESULT D3DFramework::MessageHandle(HWND hWnd, UINT message, WPARAM wParam, LPAR
 {
 	switch (message)
 	{
+	case WM_ACTIVATE:
+		if (LOWORD(wParam) == WA_INACTIVE)
+		{
+			mPaused = true;
+			mTimer.Stop();
+		}
+		else
+		{
+			mPaused = false;
+			mTimer.Resume();
+		}
+		break;
+
 	case WM_PAINT:
-		if (gResizing)
+		if (mResizing)
 		{
 			RenderFrame();
 		}
@@ -234,39 +290,52 @@ LRESULT D3DFramework::MessageHandle(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		break;
 
 	case WM_ENTERSIZEMOVE:
-		gResizing = true;
+		mResizing = true;
+		mPaused = true;
+		mTimer.Stop();
 		break;
 
 	case WM_SIZE:
-		gScreenWidth = LOWORD(lParam);
-		gScreenHeight = HIWORD(lParam);
+		mScreenWidth = LOWORD(lParam);
+		mScreenHeight = HIWORD(lParam);
 
-		if (gspDevice)
+		if (mspDevice)
 		{
 			if (wParam == SIZE_MINIMIZED)
 			{
-				gMinimized = true;
-				gMaximized = false;
+				if (!mPaused)
+				{
+					mTimer.Stop();
+				}
+				mPaused = true;
+				mMinimized = true;
+				mMaximized = false;
 			}
 			else if (wParam == SIZE_MAXIMIZED)
 			{
-				gMinimized = false;
-				gMaximized = true;
+				mTimer.Resume();
+				mPaused = false;
+				mMinimized = false;
+				mMaximized = true;
 				OnResize();
 			}
 			else if (wParam == SIZE_RESTORED)
 			{
-				if (gMinimized)
+				if (mMinimized)
 				{
-					gMinimized = false;
+					mPaused = false;
+					mTimer.Resume();
+					mMinimized = false;
 					OnResize();
 				}
-				else if (gMaximized)
+				else if (mMaximized)
 				{
-					gMaximized = false;
+					mPaused = false;
+					mTimer.Resume();
+					mMaximized = false;
 					OnResize();
 				}
-				else if (gResizing)
+				else if (mResizing)
 				{
 
 				}
@@ -279,7 +348,9 @@ LRESULT D3DFramework::MessageHandle(HWND hWnd, UINT message, WPARAM wParam, LPAR
 		break;
 
 	case WM_EXITSIZEMOVE:
-		gResizing = false;
+		mPaused = false;
+		mTimer.Resume();
+		mResizing = false;
 		OnResize();
 		break;
 
