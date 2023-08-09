@@ -35,6 +35,18 @@ void DrawTriangle::InitTriangle()
 
 	memcpy(ms.pData, vertices, sizeof(vertices));
 	mspDeviceContext->Unmap(mspVertexBuffer.Get(), 0);
+
+	bd = CD3D11_BUFFER_DESC(
+		sizeof(MatrixBuffer),
+		D3D11_BIND_CONSTANT_BUFFER,
+		D3D11_USAGE_DEFAULT
+	);
+	mspDevice->CreateBuffer(&bd, nullptr, mspConstantBuffer.ReleaseAndGetAddressOf());
+	// 버텍스 셰이더 스테이지에서 사용할 상수 버퍼를 지정
+	mspDeviceContext->VSSetConstantBuffers(0, 1, mspConstantBuffer.GetAddressOf());
+
+	mX = mY = 0.0f;
+	mRotationZ = 0.0f;
 }
 
 void DrawTriangle::InitPipeline()
@@ -257,5 +269,63 @@ void DrawTriangle::Render()
 		D3D10_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP
 	);
 	mspDeviceContext->PSSetShaderResources(0, 1, mspTextureView.GetAddressOf());
+
+	MatrixBuffer mb;
+	mb.world = DirectX::XMMatrixTranspose(mWorld);	// 전치행렬(행과 열을 바꿔서)을 만들어서 넘긴다.
+	mspDeviceContext->UpdateSubresource(
+		mspConstantBuffer.Get(), 0, nullptr, &mb, 0, 0
+	);
+
 	mspDeviceContext->Draw(4, 0);
 }
+
+void DrawTriangle::Update(float dt)
+{
+	if (mInput.IsKeyDown('Q'))
+	{
+		mRotationZ -= DirectX::XM_PI * dt;
+	}
+	else if (mInput.IsKeyDown('E'))
+	{
+		mRotationZ += DirectX::XM_PI * dt;
+	}
+
+	if (mInput.IsKeyDown(VK_LEFT))
+	{
+		mX -= 1.0f * dt;
+	}
+	else if (mInput.IsKeyDown(VK_RIGHT))
+	{
+		mX += 1.0f * dt;
+	}
+
+	if (mInput.IsKeyDown(VK_UP))
+	{
+		mY += 1.0f * dt;
+	}
+	else if (mInput.IsKeyDown(VK_DOWN))
+	{
+		mY -= 1.0f * dt;
+	}
+
+	if (mInput.IsKeyDown('1'))
+	{
+		mTimer.SetScale(1.0f);
+	}
+	if (mInput.IsKeyDown('2'))
+	{
+		mTimer.SetScale(2.0f);
+	}
+	if (mInput.IsKeyDown('3'))
+	{
+		mTimer.SetScale(3.0f);
+	}
+
+	mWorld = DirectX::XMMatrixIdentity();
+	mWorld *= DirectX::XMMatrixRotationZ(mRotationZ);
+	mWorld *= DirectX::XMMatrixTranslation(mX, mY, 0.0f);
+}
+// #. 행렬의 순서 통일
+//		=> 우리가 넘겨주는 position 값은 벡터로 1차 배열이기 때문에 따로 전치하지 않는다. 즉 벡터는 행/열 기준으로
+//		=> 변환이 자유롭다는 의미이다. 전치 행렬을 넘겨 주지 않고 버텍스 셰이더의 mul 순서를 바꾼다면 동일한 결과가 될 것이다.
+//		=> 하지만 계산에 사용할 행렬을 여러 개 넘겨 줄 때는 이런 변환 계통을 통일시켜 줄 필요가 있다.
